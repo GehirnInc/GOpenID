@@ -98,6 +98,14 @@ var (
 				},
 			},
 		},
+		messageFromQueryCase{
+			query: url.Values{
+				"openid.ns": []string{
+					"http://example.com/",
+				},
+			},
+			err: ErrUnsupportedVersion,
+		},
 	}
 )
 

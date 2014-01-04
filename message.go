@@ -15,7 +15,8 @@ const (
 )
 
 var (
-	ErrMalformedMessage = errors.New("malformed Message")
+	ErrMalformedMessage   = errors.New("malformed Message")
+	ErrUnsupportedVersion = errors.New("unsupported version")
 
 	ProtocolFields = []string{
 		"assoc_handle",
@@ -175,8 +176,8 @@ func MessageFromQuery(req url.Values) (msg Message, err error) {
 	case NsOpenID20:
 	case "":
 	default:
-		// TODO: return error
-		// unsuported version
+		err = ErrUnsupportedVersion
+		return
 	}
 
 	if ns == "" {
