@@ -31,7 +31,6 @@ var (
 					NewMessageKey(NsOpenID20, "mode"): "checkid_immediate",
 				},
 			},
-			err: nil,
 		},
 		messageFromQueryCase{
 			query: url.Values{
@@ -51,7 +50,6 @@ var (
 					NewMessageKey("http://example.com/", "key"): "value",
 				},
 			},
-			err: nil,
 		},
 		messageFromQueryCase{
 			query: url.Values{
@@ -87,6 +85,19 @@ var (
 			},
 			err: ErrMalformedMessage,
 		},
+		messageFromQueryCase{
+			query: url.Values{
+				"openid.mode": []string{
+					"checkid_immediate",
+				},
+			},
+			expected: Message{
+				namespace: NsOpenID11,
+				args: map[MessageKey]MessageValue{
+					NewMessageKey(NsOpenID11, "mode"): "checkid_immediate",
+				},
+			},
+		},
 	}
 )
 
@@ -103,4 +114,54 @@ func TestMessageFromQuery(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestMessage(t *testing.T) {
+	var (
+		NsExt   NamespaceURI = "http://example.com/"
+		NsDummy NamespaceURI = "http://dummy.example.com/"
+	)
+
+	msg := Message{
+		namespace: NsOpenID20,
+		args: map[MessageKey]MessageValue{
+			NewMessageKey(NsExt, "foo"):            "bar",
+			NewMessageKey(NsExt, "hoge"):           "fuga",
+			NewMessageKey(NsOpenID20, "mode"):      "checkid_immediate",
+			NewMessageKey(NsOpenID20, "return_to"): "http://www.example.com/",
+		},
+	}
+
+	assert.Equal(t, msg.GetNamespace(), NsOpenID20)
+
+	if arg, ok := msg.GetArg(NewMessageKey(NsExt, "foo")); assert.True(t, ok) {
+		assert.Equal(t, arg, MessageValue("bar"))
+	}
+	if arg, ok := msg.GetArg(NewMessageKey(NsExt, "hoge")); assert.True(t, ok) {
+		assert.Equal(t, arg, MessageValue("fuga"))
+	}
+	if arg, ok := msg.GetArg(NewMessageKey(NsOpenID20, "mode")); assert.True(t, ok) {
+		assert.Equal(t, arg, MessageValue("checkid_immediate"))
+	}
+	if arg, ok := msg.GetArg(NewMessageKey(NsOpenID20, "return_to")); assert.True(t, ok) {
+		assert.Equal(t, arg, MessageValue("http://www.example.com/"))
+	}
+	_, ok := msg.GetArg(NewMessageKey(NsOpenID20, "notgiven"))
+	assert.False(t, ok)
+
+	assert.Equal(t,
+		msg.GetArgs(NsOpenID20),
+		map[MessageKey]MessageValue{
+			NewMessageKey(NsOpenID20, "mode"):      "checkid_immediate",
+			NewMessageKey(NsOpenID20, "return_to"): "http://www.example.com/",
+		},
+	)
+	assert.Equal(t,
+		msg.GetArgs(NsExt),
+		map[MessageKey]MessageValue{
+			NewMessageKey(NsExt, "foo"):  "bar",
+			NewMessageKey(NsExt, "hoge"): "fuga",
+		},
+	)
+	assert.Equal(t, msg.GetArgs(NsDummy), map[MessageKey]MessageValue{})
 }
