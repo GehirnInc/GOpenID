@@ -81,32 +81,55 @@ func (v MessageValue) String() string {
 }
 
 type Message struct {
-	namespace NamespaceURI
-	args      map[MessageKey]MessageValue
+	namespace     NamespaceURI
+	nsuri2nsalias map[NamespaceURI]string
+	nsalias2nsuri map[string]NamespaceURI
+	args          map[MessageKey]MessageValue
 }
 
 func NewMessage(ns NamespaceURI) Message {
 	return Message{
-		namespace: ns,
-		args:      make(map[MessageKey]MessageValue),
+		namespace:     ns,
+		nsuri2nsalias: make(map[NamespaceURI]string),
+		nsalias2nsuri: make(map[string]NamespaceURI),
+		args:          make(map[MessageKey]MessageValue),
 	}
 }
 
-func (m *Message) setNamespace(ns NamespaceURI) {
-	m.namespace = ns
-}
-
-func (m *Message) GetNamespace() NamespaceURI {
+func (m *Message) GetOpenIDNamespace() NamespaceURI {
 	return m.namespace
 }
 
-func (m *Message) AddArg(k MessageKey, v MessageValue) {
-	m.args[k] = v
+func (m *Message) GetNamespaceURI(alias string) (NamespaceURI, bool) {
+	if alias == "openid" {
+		return m.GetOpenIDNamespace(), true
+	} else {
+		nsuri, ok := m.nsalias2nsuri[alias]
+		return nsuri, ok
+	}
+}
+
+func (m *Message) GetNamespaceAlias(uri NamespaceURI) (string, bool) {
+	if uri == m.GetOpenIDNamespace() {
+		return "openid", true
+	} else {
+		nsuri, ok := m.nsuri2nsalias[uri]
+		return nsuri, ok
+	}
+}
+
+func (m *Message) SetNamespaceAlias(alias string, uri NamespaceURI) {
+	m.nsuri2nsalias[uri] = alias
+	m.nsalias2nsuri[alias] = uri
 }
 
 func (m *Message) GetArg(k MessageKey) (MessageValue, bool) {
 	v, ok := m.args[k]
 	return v, ok
+}
+
+func (m *Message) AddArg(k MessageKey, v MessageValue) {
+	m.args[k] = v
 }
 
 func (m *Message) GetArgs(nsuri NamespaceURI) map[MessageKey]MessageValue {
@@ -118,6 +141,10 @@ func (m *Message) GetArgs(nsuri NamespaceURI) map[MessageKey]MessageValue {
 		}
 	}
 	return ret
+}
+
+func (m *Message) ToQuery() url.Values {
+	return nil
 }
 
 func MessageFromQuery(req url.Values) (msg Message, err error) {
@@ -190,7 +217,9 @@ func MessageFromQuery(req url.Values) (msg Message, err error) {
 	msg = NewMessage(ns)
 	for nsalias, kv := range args {
 		nsuri, isKnownAlias := nsmap[nsalias]
-		if !isKnownAlias {
+		if isKnownAlias {
+			msg.SetNamespaceAlias(nsalias, nsuri)
+		} else {
 			nsuri = ns
 		}
 

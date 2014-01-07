@@ -26,7 +26,9 @@ var (
 				},
 			},
 			expected: Message{
-				namespace: NsOpenID20,
+				namespace:     NsOpenID20,
+				nsuri2nsalias: make(map[NamespaceURI]string),
+				nsalias2nsuri: make(map[string]NamespaceURI),
 				args: map[MessageKey]MessageValue{
 					NewMessageKey(NsOpenID20, "mode"): "checkid_immediate",
 				},
@@ -46,6 +48,12 @@ var (
 			},
 			expected: Message{
 				namespace: NsOpenID20,
+				nsuri2nsalias: map[NamespaceURI]string{
+					"http://example.com/": "example",
+				},
+				nsalias2nsuri: map[string]NamespaceURI{
+					"example": "http://example.com/",
+				},
 				args: map[MessageKey]MessageValue{
 					NewMessageKey("http://example.com/", "key"): "value",
 				},
@@ -92,7 +100,9 @@ var (
 				},
 			},
 			expected: Message{
-				namespace: NsOpenID11,
+				namespace:     NsOpenID11,
+				nsuri2nsalias: make(map[NamespaceURI]string),
+				nsalias2nsuri: make(map[string]NamespaceURI),
 				args: map[MessageKey]MessageValue{
 					NewMessageKey(NsOpenID11, "mode"): "checkid_immediate",
 				},
@@ -132,6 +142,12 @@ func TestMessage(t *testing.T) {
 
 	msg := Message{
 		namespace: NsOpenID20,
+		nsuri2nsalias: map[NamespaceURI]string{
+			"http://example.com/": "example",
+		},
+		nsalias2nsuri: map[string]NamespaceURI{
+			"example": "http://example.com/",
+		},
 		args: map[MessageKey]MessageValue{
 			NewMessageKey(NsExt, "foo"):            "bar",
 			NewMessageKey(NsExt, "hoge"):           "fuga",
@@ -140,19 +156,27 @@ func TestMessage(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, msg.GetNamespace(), NsOpenID20)
+	assert.Equal(t, msg.GetOpenIDNamespace(), NsOpenID20)
+
+	if nsuri, ok := msg.GetNamespaceURI("example"); assert.True(t, ok) {
+		assert.Equal(t, nsuri, "http://example.com/")
+	}
+
+	if nsalias, ok := msg.GetNamespaceAlias("http://example.com/"); assert.True(t, ok) {
+		assert.Equal(t, nsalias, "example")
+	}
 
 	if arg, ok := msg.GetArg(NewMessageKey(NsExt, "foo")); assert.True(t, ok) {
-		assert.Equal(t, arg, MessageValue("bar"))
+		assert.Equal(t, arg, "bar")
 	}
 	if arg, ok := msg.GetArg(NewMessageKey(NsExt, "hoge")); assert.True(t, ok) {
-		assert.Equal(t, arg, MessageValue("fuga"))
+		assert.Equal(t, arg, "fuga")
 	}
 	if arg, ok := msg.GetArg(NewMessageKey(NsOpenID20, "mode")); assert.True(t, ok) {
-		assert.Equal(t, arg, MessageValue("checkid_immediate"))
+		assert.Equal(t, arg, "checkid_immediate")
 	}
 	if arg, ok := msg.GetArg(NewMessageKey(NsOpenID20, "return_to")); assert.True(t, ok) {
-		assert.Equal(t, arg, MessageValue("http://www.example.com/"))
+		assert.Equal(t, arg, "http://www.example.com/")
 	}
 	_, ok := msg.GetArg(NewMessageKey(NsOpenID20, "notgiven"))
 	assert.False(t, ok)
