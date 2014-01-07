@@ -12,6 +12,8 @@ const (
 	NsOpenID10 NamespaceURI = "http://openid.net/signon/1.0"
 	NsOpenID11 NamespaceURI = "http://openid.net/signon/1.1"
 	NsOpenID20 NamespaceURI = "http://specs.openid.net/auth/2.0"
+
+	NsIdentifierSelect NamespaceURI = "http://specs.openid.net/auth/2.0/identifier_select"
 )
 
 var (
