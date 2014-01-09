@@ -111,10 +111,10 @@ func (m *Message) GetNamespaceURI(alias string) (NamespaceURI, bool) {
 
 func (m *Message) GetNamespaceAlias(uri NamespaceURI) (string, bool) {
 	if uri == m.GetOpenIDNamespace() {
-		return "openid", true
+		return "", true
 	} else {
-		nsuri, ok := m.nsuri2nsalias[uri]
-		return nsuri, ok
+		nsalias, ok := m.nsuri2nsalias[uri]
+		return nsalias, ok
 	}
 }
 
@@ -144,7 +144,25 @@ func (m *Message) GetArgs(nsuri NamespaceURI) map[MessageKey]MessageValue {
 }
 
 func (m *Message) ToQuery() url.Values {
-	return nil
+	query := url.Values{
+		"openid.ns": []string{m.namespace.String()},
+	}
+
+	for nsalias, nsuri := range m.nsalias2nsuri {
+		query[fmt.Sprintf("openid.ns.%s", nsalias)] = []string{nsuri.String()}
+	}
+
+	for key, value := range m.args {
+		var queryKey string
+		if alias, _ := m.GetNamespaceAlias(key.GetNamespace()); alias == "" {
+			queryKey = fmt.Sprintf("openid.%s", key.GetKey())
+		} else {
+			queryKey = fmt.Sprintf("openid.%s.%s", alias, key.GetKey())
+		}
+		query[queryKey] = []string{value.String()}
+	}
+
+	return query
 }
 
 func MessageFromQuery(req url.Values) (msg Message, err error) {

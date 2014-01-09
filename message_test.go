@@ -196,4 +196,16 @@ func TestMessage(t *testing.T) {
 		},
 	)
 	assert.Equal(t, msg.GetArgs(NsDummy), map[MessageKey]MessageValue{})
+
+	assert.Equal(t,
+		msg.ToQuery(),
+		url.Values{
+			"openid.ns":           []string{NsOpenID20.String()},
+			"openid.ns.example":   []string{"http://example.com/"},
+			"openid.example.foo":  []string{"bar"},
+			"openid.example.hoge": []string{"fuga"},
+			"openid.mode":         []string{"checkid_immediate"},
+			"openid.return_to":    []string{"http://www.example.com/"},
+		},
+	)
 }
