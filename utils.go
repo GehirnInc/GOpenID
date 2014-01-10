@@ -2,7 +2,9 @@ package gopenid
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
+	"strings"
 	"time"
 )
 
@@ -32,4 +34,22 @@ func GenerateNonce(now time.Time) MessageValue {
 	ts := now.UTC().Format(time.RFC3339)
 
 	return MessageValue(ts + salt)
+}
+
+func BTWOC(i int64) string {
+	bytes := big.NewInt(int64(i)).Bytes()
+
+	if len(bytes) < 1 || bytes[0] > 0x7f {
+		ret := bytes
+		bytes = make([]byte, len(ret)+1)
+
+		copy(bytes[1:], ret)
+	}
+
+	hex := make([]string, len(bytes))
+	for i, b := range bytes {
+		hex[i] = fmt.Sprintf("\\x%02X", b)
+	}
+
+	return strings.Join(hex, "")
 }
