@@ -1,10 +1,11 @@
 package gopenid
 
 import (
+	"bytes"
 	"crypto/rand"
-	"fmt"
+	"encoding/base64"
+	"io/ioutil"
 	"math/big"
-	"strings"
 	"time"
 )
 
@@ -36,20 +37,25 @@ func GenerateNonce(now time.Time) MessageValue {
 	return MessageValue(ts + salt)
 }
 
-func BTWOC(i int64) string {
-	bytes := big.NewInt(int64(i)).Bytes()
+func IntToBase64(i *big.Int) (output []byte, err error) {
+	encoded := bytes.NewBuffer(nil)
+	encoder := base64.NewEncoder(base64.StdEncoding, encoded)
 
-	if len(bytes) < 1 || bytes[0] > 0x7f {
-		ret := bytes
-		bytes = make([]byte, len(ret)+1)
+	encoder.Write(i.Bytes())
+	encoder.Close()
 
-		copy(bytes[1:], ret)
+	return ioutil.ReadAll(encoded)
+}
+
+func Base64ToInt(input []byte) (i *big.Int, err error) {
+	encoded := bytes.NewReader(input)
+	decoded := base64.NewDecoder(base64.StdEncoding, encoded)
+
+	buf, err := ioutil.ReadAll(decoded)
+	if err != nil {
+		return
 	}
 
-	hex := make([]string, len(bytes))
-	for i, b := range bytes {
-		hex[i] = fmt.Sprintf("\\x%02X", b)
-	}
-
-	return strings.Join(hex, "")
+	i = new(big.Int).SetBytes(buf)
+	return
 }
