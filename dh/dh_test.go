@@ -1,4 +1,4 @@
-package gopenid
+package dh
 
 import (
 	"crypto/rand"
