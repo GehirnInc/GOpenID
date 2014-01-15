@@ -80,6 +80,10 @@ func (v MessageValue) String() string {
 	return string(v)
 }
 
+func (v MessageValue) Bytes() []byte {
+	return []byte(v)
+}
+
 type Message struct {
 	namespace     NamespaceURI
 	nsuri2nsalias map[NamespaceURI]string
