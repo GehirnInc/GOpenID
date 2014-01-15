@@ -37,21 +37,29 @@ func GenerateNonce(now time.Time) MessageValue {
 	return MessageValue(ts + salt)
 }
 
-func IntToBase64(i *big.Int) (output []byte, err error) {
+func EncodeBase64(input []byte) ([]byte, error) {
 	encoded := bytes.NewBuffer(nil)
 	encoder := base64.NewEncoder(base64.StdEncoding, encoded)
 
-	encoder.Write(i.Bytes())
+	encoder.Write(input)
 	encoder.Close()
 
 	return ioutil.ReadAll(encoded)
 }
 
-func Base64ToInt(input []byte) (i *big.Int, err error) {
-	encoded := bytes.NewReader(input)
-	decoded := base64.NewDecoder(base64.StdEncoding, encoded)
+func DecodeBase64(encoded []byte) (buf []byte, err error) {
+	reader := bytes.NewReader(encoded)
+	decoded := base64.NewDecoder(base64.StdEncoding, reader)
+	buf, err = ioutil.ReadAll(decoded)
+	return
+}
 
-	buf, err := ioutil.ReadAll(decoded)
+func IntToBase64(i *big.Int) (output []byte, err error) {
+	return EncodeBase64(i.Bytes())
+}
+
+func Base64ToInt(input []byte) (i *big.Int, err error) {
+	buf, err := DecodeBase64(input)
 	if err != nil {
 		return
 	}
