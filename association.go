@@ -27,6 +27,26 @@ var (
 		hashFunc:   sha256.New,
 		secretSize: sha256.Size,
 	}
+
+	SESSION_DH_SHA1 = SessionType{
+		name: "DH-SHA1",
+		assocTypes: []AssocType{
+			ASSOC_HMAC_SHA1,
+		},
+	}
+	SESSION_DH_SHA256 = SessionType{
+		name: "DH-SHA256",
+		assocTypes: []AssocType{
+			ASSOC_HMAC_SHA256,
+		},
+	}
+	SESSION_NO_ENCRYPTION = SessionType{
+		name: "no-encryption",
+		assocTypes: []AssocType{
+			ASSOC_HMAC_SHA1,
+			ASSOC_HMAC_SHA256,
+		},
+	}
 )
 
 type AssocType struct {
@@ -41,6 +61,15 @@ func (t *AssocType) Name() string {
 
 func (t *AssocType) GetSecretSize() int {
 	return t.secretSize
+}
+
+type SessionType struct {
+	name       string
+	assocTypes []AssocType
+}
+
+func (t *SessionType) Name() string {
+	return t.name
 }
 
 type Association struct {
