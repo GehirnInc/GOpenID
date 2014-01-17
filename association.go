@@ -16,6 +16,7 @@ const (
 
 var (
 	ErrGeneratingAssociationFailed = errors.New("generating association failed")
+	ErrAssociationNotFound         = errors.New("association not found")
 
 	ASSOC_HMAC_SHA1 = AssocType{
 		name:       "HMAC-SHA1",
@@ -126,6 +127,10 @@ func (assoc *Association) GetSecret() []byte {
 
 func (assoc *Association) GetExpires() int64 {
 	return assoc.expires
+}
+
+func (assoc *Association) IsValid() bool {
+	return time.Now().Before(time.Unix(assoc.GetExpires(), 0))
 }
 
 func (assoc *Association) IsStateless() bool {
