@@ -3,27 +3,34 @@ package provider
 import (
 	"errors"
 	"github.com/GehirnInc/GOpenID"
-	"net/url"
-	"time"
+	"github.com/GehirnInc/GOpenID/dh"
+	"math/big"
 )
 
 var (
-	ErrUnknownMode           = errors.New("Unknown mode")
-	ErrInvalidCheckIDRequest = errors.New("invalid checkid_* request")
+	ErrUnknownMode                       = errors.New("Unknown mode")
+	ErrInvalidCheckIDRequest             = errors.New("invalid checkid_* request")
+	ErrInvalidCheckAuthenticationRequest = errors.New("invalid checkid_authentication request")
+	ErrInvalidAssociateRequest           = errors.New("invalid associate request")
 )
 
 type Request interface {
 	GetMode() string
 	GetNamespace() gopenid.NamespaceURI
+	GetMessage() gopenid.Message
 }
 
-func RequestFromMessage(msg gopenid.Message, endpoint string) (Request, error) {
+func RequestFromMessage(msg gopenid.Message) (Request, error) {
 	mode, _ := msg.GetArg(gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "mode"))
 	switch mode {
 	case "checkid_immediate":
-		return CheckIDRequestFromMessage(msg, endpoint)
+		return CheckIDRequestFromMessage(msg)
 	case "checkid_setup":
-		return CheckIDRequestFromMessage(msg, endpoint)
+		return CheckIDRequestFromMessage(msg)
+	case "associate":
+		return AssociateRequestFromMessage(msg)
+	case "check_authentication":
+		return CheckAuthenticationRequestFromMessage(msg)
 	default:
 		return nil, ErrUnknownMode
 	}
@@ -31,8 +38,7 @@ func RequestFromMessage(msg gopenid.Message, endpoint string) (Request, error) {
 }
 
 type CheckIDRequest struct {
-	message  gopenid.Message
-	endpoint string
+	message gopenid.Message
 
 	mode        gopenid.MessageValue
 	claimedId   gopenid.MessageValue
@@ -42,7 +48,7 @@ type CheckIDRequest struct {
 	realm       gopenid.MessageValue
 }
 
-func CheckIDRequestFromMessage(msg gopenid.Message, endpoint string) (req *CheckIDRequest, err error) {
+func CheckIDRequestFromMessage(msg gopenid.Message) (req *CheckIDRequest, err error) {
 	ns := msg.GetOpenIDNamespace()
 	mode, _ := msg.GetArg(gopenid.NewMessageKey(ns, "mode"))
 
@@ -84,7 +90,6 @@ func CheckIDRequestFromMessage(msg gopenid.Message, endpoint string) (req *Check
 
 	req = &CheckIDRequest{
 		message:     msg,
-		endpoint:    endpoint,
 		mode:        mode,
 		claimedId:   claimedId,
 		identity:    identity,
@@ -103,71 +108,147 @@ func (req *CheckIDRequest) GetMode() string {
 	return req.mode.String()
 }
 
-func (req *CheckIDRequest) IsStateless() bool {
-	return req.assocHandle == ""
+func (req *CheckIDRequest) GetMessage() gopenid.Message {
+	return req.message
 }
 
-func (req *CheckIDRequest) Accept(identity, claimedId string) (res *Response, err error) {
-	var (
-		msgIdentity  gopenid.MessageValue
-		msgClaimedId gopenid.MessageValue
-	)
+type CheckAuthenticationRequest struct {
+	message gopenid.Message
 
-	if req.identity.String() == gopenid.NsIdentifierSelect.String() {
-		if identity == "" {
-			err = ErrInvalidCheckIDRequest
-			return
-		}
+	mode        gopenid.MessageValue
+	assocHandle gopenid.MessageValue
+	sig         gopenid.MessageValue
+}
 
-		msgIdentity = gopenid.MessageValue(identity)
-		msgClaimedId = gopenid.MessageValue(claimedId)
-		if msgClaimedId == "" {
-			msgClaimedId = msgIdentity
-		}
-	} else if req.identity != "" {
-		if identity != "" && req.identity.String() != identity {
-			err = ErrInvalidCheckIDRequest
-			return
-		}
-		msgIdentity = gopenid.MessageValue(req.identity)
-		msgClaimedId = gopenid.MessageValue(req.claimedId)
-	} else if identity != "" {
-		err = ErrInvalidCheckIDRequest
+func CheckAuthenticationRequestFromMessage(msg gopenid.Message) (req *CheckAuthenticationRequest, err error) {
+	ns := msg.GetOpenIDNamespace()
+
+	if ns != gopenid.NsOpenID20 {
+		err = ErrInvalidCheckAuthenticationRequest
 		return
 	}
 
-	nonce := gopenid.GenerateNonce(time.Now().UTC())
+	mode, _ := msg.GetArg(gopenid.NewMessageKey(ns, "mode"))
 
-	res = NewResponse(req)
-	res.AddArg(gopenid.NewMessageKey(req.GetNamespace(), "mode"), "id_res")
-	res.AddArg(gopenid.NewMessageKey(req.GetNamespace(), "op_endpoint"), gopenid.MessageValue(req.endpoint))
-	res.AddArg(gopenid.NewMessageKey(req.GetNamespace(), "identity"), msgIdentity)
-	res.AddArg(gopenid.NewMessageKey(req.GetNamespace(), "claimed_id"), msgClaimedId)
-	res.AddArg(gopenid.NewMessageKey(req.GetNamespace(), "return_to"), req.returnTo)
-	res.AddArg(gopenid.NewMessageKey(req.GetNamespace(), "response_nonce"), nonce)
+	assocHandle, ok := msg.GetArg(gopenid.NewMessageKey(ns, "assoc_handle"))
+	if !ok {
+		err = ErrInvalidCheckAuthenticationRequest
+		return
+	}
+
+	sig, ok := msg.GetArg(gopenid.NewMessageKey(ns, "sig"))
+	if !ok {
+		err = ErrInvalidCheckAuthenticationRequest
+		return
+	}
+
+	req = &CheckAuthenticationRequest{
+		message: msg,
+
+		mode:        mode,
+		assocHandle: assocHandle,
+		sig:         sig,
+	}
+	return
+}
+
+func (req *CheckAuthenticationRequest) GetMode() string {
+	return req.mode.String()
+}
+
+func (req *CheckAuthenticationRequest) GetNamespace() gopenid.NamespaceURI {
+	return req.message.GetOpenIDNamespace()
+}
+
+func (req *CheckAuthenticationRequest) GetMessage() gopenid.Message {
+	return req.message
+}
+
+type AssociateRequest struct {
+	message gopenid.Message
+
+	mode        gopenid.MessageValue
+	assocType   gopenid.AssocType
+	sessionType gopenid.SessionType
+
+	dhParams         dh.Params
+	dhConsumerPublic dh.PublicKey
+}
+
+func AssociateRequestFromMessage(msg gopenid.Message) (req *AssociateRequest, err error) {
+	ns := msg.GetOpenIDNamespace()
+	req = &AssociateRequest{
+		message: msg,
+	}
+
+	req.mode, _ = msg.GetArg(gopenid.NewMessageKey(ns, "mode"))
+
+	assocTypeName, _ := msg.GetArg(gopenid.NewMessageKey(ns, "assoc_type"))
+	req.assocType, err = gopenid.GetAssocTypeByName(assocTypeName.String())
+	if err != nil {
+		err = ErrInvalidAssociateRequest
+		return
+	}
+
+	sessionTypeName, _ := msg.GetArg(gopenid.NewMessageKey(ns, "session_type"))
+	req.sessionType, err = gopenid.GetSessionTypeByName(sessionTypeName.String())
+	if err != nil {
+		err = ErrInvalidAssociateRequest
+		return
+	}
+
+	if req.sessionType.Name() != gopenid.SESSION_NO_ENCRYPTION.Name() {
+		var (
+			P *big.Int
+			G *big.Int
+		)
+		PBase64, ok := msg.GetArg(gopenid.NewMessageKey(ns, "dh_modulus"))
+		if !ok {
+			err = ErrInvalidAssociateRequest
+			return
+		}
+		P, err = gopenid.Base64ToInt(PBase64.Bytes())
+		if err != nil {
+			err = ErrInvalidAssociateRequest
+			return
+		}
+
+		GBase64, _ := msg.GetArg(gopenid.NewMessageKey(ns, "dh_gen"))
+		G, err = gopenid.Base64ToInt(GBase64.Bytes())
+		if err != nil {
+			err = ErrInvalidAssociateRequest
+			return
+		}
+		req.dhParams = dh.Params{
+			P: P,
+			G: G,
+		}
+
+		var (
+			Y *big.Int
+		)
+		YBase64, _ := msg.GetArg(gopenid.NewMessageKey(ns, "dh_consumer_public"))
+		Y, err = gopenid.Base64ToInt(YBase64.Bytes())
+		if err != nil {
+			err = ErrInvalidAssociateRequest
+			return
+		}
+		req.dhConsumerPublic = dh.PublicKey{
+			Y: Y,
+		}
+	}
 
 	return
 }
 
-func (req *CheckIDRequest) Reject() *Response {
-	res := NewResponse(req)
+func (req *AssociateRequest) GetMode() string {
+	return req.mode.String()
+}
 
-	var mode gopenid.MessageValue
-	if req.mode == "checkid_immediate" {
-		setupmsg := req.message
-		setupmsg.AddArg(gopenid.NewMessageKey(req.GetNamespace(), "mode"), "checkid_setup")
-		setupUrl, _ := url.Parse(req.endpoint)
-		setupUrl.RawQuery = setupmsg.ToQuery().Encode()
+func (req *AssociateRequest) GetNamespace() gopenid.NamespaceURI {
+	return req.message.GetOpenIDNamespace()
+}
 
-		mode = "setup_needed"
-		res.AddArg(
-			gopenid.NewMessageKey(req.GetNamespace(), "user_setup_url"),
-			gopenid.MessageValue(setupUrl.String()),
-		)
-	} else {
-		mode = "cancel"
-	}
-	res.AddArg(gopenid.NewMessageKey(req.GetNamespace(), "mode"), mode)
-
-	return res
+func (req *AssociateRequest) GetMessage() gopenid.Message {
+	return req.message
 }

@@ -9,11 +9,14 @@ type Response struct {
 	message gopenid.Message
 }
 
-func NewResponse(req Request) *Response {
+func NewResponse(ns gopenid.NamespaceURI) *Response {
 	return &Response{
-		request: req,
-		message: gopenid.NewMessage(req.GetNamespace()),
+		message: gopenid.NewMessage(ns),
 	}
+}
+
+func (res *Response) GetNamespace() gopenid.NamespaceURI {
+	return res.message.GetOpenIDNamespace()
 }
 
 func (res *Response) AddArg(key gopenid.MessageKey, value gopenid.MessageValue) {
@@ -22,12 +25,4 @@ func (res *Response) AddArg(key gopenid.MessageKey, value gopenid.MessageValue) 
 
 func (res *Response) GetArg(key gopenid.MessageKey) (gopenid.MessageValue, bool) {
 	return res.message.GetArg(key)
-}
-
-func (res *Response) NeedsSigning() bool {
-	mode, _ := res.message.GetArg(
-		gopenid.NewMessageKey(res.message.GetOpenIDNamespace(), "mode"),
-	)
-
-	return mode == "id_res"
 }

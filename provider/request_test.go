@@ -162,7 +162,7 @@ func TestCheckIDRequest(t *testing.T) {
 			t.Log("invalid request data in index %d", index)
 		}
 
-		req, err := CheckIDRequestFromMessage(msg, endpoint)
+		req, err := CheckIDRequestFromMessage(msg)
 		if !assert.Nil(t, err) {
 			t.Logf("invalid request data in index %d, %v\n", index, err)
 			continue
@@ -170,51 +170,11 @@ func TestCheckIDRequest(t *testing.T) {
 
 		assert.Equal(t, req.GetNamespace(), testCase.namespace)
 		assert.Equal(t, req.GetMode(), testCase.mode)
-		assert.Equal(t, req.IsStateless(), testCase.stateless)
 
 		for _, response_ := range testCase.responses {
-			switch response := response_.(type) {
+			switch response_.(type) {
 			case checkidRequestAcceptedResponse:
-				res, err := req.Accept(response.arg_identity, response.arg_claimedId)
-				if response.err == nil {
-					if assert.Nil(t, err) {
-						assert.Equal(t, req, res.request)
-
-						mode, ok := res.GetArg(gopenid.NewMessageKey(testCase.namespace, "mode"))
-						if assert.True(t, ok) {
-							assert.Equal(t, "id_res", mode)
-						}
-
-						opEndpoint, ok := res.GetArg(gopenid.NewMessageKey(testCase.namespace, "op_endpoint"))
-						if assert.True(t, ok) {
-							assert.Equal(t, gopenid.MessageValue(endpoint), opEndpoint)
-						}
-
-						identity, ok := res.GetArg(gopenid.NewMessageKey(testCase.namespace, "identity"))
-						if assert.True(t, ok) {
-							assert.Equal(t, response.identity, identity)
-						}
-
-						claimedId, ok := res.GetArg(gopenid.NewMessageKey(testCase.namespace, "claimed_id"))
-						if assert.True(t, ok) {
-							assert.Equal(t, response.claimedId, claimedId)
-						}
-					}
-				} else {
-					assert.Equal(t, err, response.err)
-				}
 			case checkidRequestRejectedResponse:
-				res := req.Reject()
-				mode, _ := res.GetArg(gopenid.NewMessageKey(testCase.namespace, "mode"))
-				assert.Equal(t, mode, response.mode)
-
-				if response.mode == "setup_needed" {
-					setupUrl, _ := res.GetArg(gopenid.NewMessageKey(testCase.namespace, "user_setup_url"))
-					assert.Equal(t,
-						setupUrl,
-						response.setupUrl,
-					)
-				}
 			default:
 				t.Fatal("invalid test case")
 			}
