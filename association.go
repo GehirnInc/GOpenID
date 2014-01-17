@@ -17,6 +17,8 @@ const (
 var (
 	ErrGeneratingAssociationFailed = errors.New("generating association failed")
 	ErrAssociationNotFound         = errors.New("association not found")
+	ErrUnknownSessionType          = errors.New("unknown session type")
+	ErrUnknownAssocType            = errors.New("unknown association type")
 
 	ASSOC_HMAC_SHA1 = AssocType{
 		name:       "HMAC-SHA1",
@@ -64,6 +66,19 @@ func (t *AssocType) GetSecretSize() int {
 	return t.secretSize
 }
 
+func GetAssocTypeByName(name string) (assocType AssocType, err error) {
+	switch name {
+	case "HMAC-SHA1":
+		assocType = ASSOC_HMAC_SHA1
+	case "HMAC-SHA256":
+		assocType = ASSOC_HMAC_SHA256
+	default:
+		err = ErrUnknownAssocType
+	}
+
+	return
+}
+
 type SessionType struct {
 	name       string
 	assocTypes []AssocType
@@ -71,6 +86,21 @@ type SessionType struct {
 
 func (t *SessionType) Name() string {
 	return t.name
+}
+
+func GetSessionTypeByName(name string) (sessionType SessionType, err error) {
+	switch name {
+	case "no-encryption":
+		sessionType = SESSION_NO_ENCRYPTION
+	case "DH-SHA1":
+		sessionType = SESSION_DH_SHA1
+	case "DH-SHA256":
+		sessionType = SESSION_DH_SHA256
+	default:
+		err = ErrUnknownSessionType
+	}
+
+	return
 }
 
 type Association struct {
