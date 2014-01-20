@@ -217,4 +217,9 @@ func TestMessage(t *testing.T) {
 		}, []byte{'\n'})
 		assert.Equal(t, kv, expected)
 	}
+
+	assert.Equal(t,
+		msg,
+		msg.Copy(),
+	)
 }

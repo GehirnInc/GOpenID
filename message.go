@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"sync"
 )
 
 const (
@@ -93,6 +94,7 @@ type Message struct {
 	nsuri2nsalias map[NamespaceURI]string
 	nsalias2nsuri map[string]NamespaceURI
 	args          map[MessageKey]MessageValue
+	sync.Mutex
 }
 
 func NewMessage(ns NamespaceURI) Message {
@@ -239,6 +241,27 @@ func (m *Message) ToKeyValue(order []string) (b []byte, err error) {
 
 	b = bytes.Join(lines, []byte{'\n'})
 	return
+}
+
+func (m *Message) Copy() Message {
+	m.Lock()
+	defer m.Unlock()
+
+	msg := NewMessage(m.namespace)
+
+	for k, v := range m.nsuri2nsalias {
+		msg.nsuri2nsalias[k] = v
+	}
+
+	for k, v := range m.nsalias2nsuri {
+		msg.nsalias2nsuri[k] = v
+	}
+
+	for k, v := range m.args {
+		msg.args[k] = v
+	}
+
+	return msg
 }
 
 func MessageFromQuery(req url.Values) (msg Message, err error) {
