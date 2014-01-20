@@ -1,12 +1,15 @@
 package gopenid
 
 import (
+	"crypto/hmac"
 	"crypto/sha1"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"github.com/nu7hatch/gouuid"
 	"hash"
 	"io"
+	"strings"
 	"time"
 )
 
@@ -165,4 +168,33 @@ func (assoc *Association) IsValid() bool {
 
 func (assoc *Association) IsStateless() bool {
 	return assoc.isStateless
+}
+
+func (assoc *Association) Sign(msg Message, signed []string) (err error) {
+	order := make([]string, len(signed))
+	for i, key := range signed {
+		order[i] = fmt.Sprintf("openid.%s", key)
+	}
+
+	mac := hmac.New(assoc.assocType.hashFunc, assoc.secret)
+	kv, err := msg.ToKeyValue(order)
+	if err != nil {
+		return
+	}
+	mac.Write(kv)
+	sig, err := EncodeBase64(mac.Sum(nil))
+	if err != nil {
+		return
+	}
+
+	msg.AddArg(
+		NewMessageKey(msg.GetOpenIDNamespace(), "signed"),
+		MessageValue(strings.Join(signed, ",")),
+	)
+	msg.AddArg(
+		NewMessageKey(msg.GetOpenIDNamespace(), "sig"),
+		MessageValue(sig),
+	)
+
+	return
 }
