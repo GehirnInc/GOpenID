@@ -1,6 +1,7 @@
 package gopenid
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/url"
@@ -19,6 +20,9 @@ const (
 var (
 	ErrMalformedMessage   = errors.New("malformed Message")
 	ErrUnsupportedVersion = errors.New("unsupported version")
+	ErrKeyContainsColon   = errors.New("key contains colon")
+	ErrKeyContainsNewLine = errors.New("key contains new line")
+	ErrValueNotFound      = errors.New("value not found")
 
 	ProtocolFields = []string{
 		"assoc_handle",
@@ -167,6 +171,74 @@ func (m *Message) ToQuery() url.Values {
 	}
 
 	return query
+}
+
+func (m *Message) ToKeyValue(order []string) (b []byte, err error) {
+	validator := func(str string, isKey bool) error {
+		if isKey && strings.Index(str, ":") > -1 {
+			return ErrKeyContainsColon
+		}
+
+		if strings.Index(str, "\n") > -1 {
+			return ErrKeyContainsNewLine
+		}
+
+		return nil
+	}
+
+	lines := make([][]byte, 0, len(order))
+
+	for _, key := range order {
+		if !strings.HasPrefix(key, "openid.") {
+			err = ErrValueNotFound
+			return
+		}
+		var (
+			parts = strings.SplitN(key[7:], ".", 2)
+
+			value string
+		)
+		if len(parts) > 1 {
+			if parts[0] == "ns" {
+				v, ok := m.nsalias2nsuri[parts[1]]
+				if !ok {
+					err = ErrValueNotFound
+					return
+				}
+				value = v.String()
+			} else {
+				v, ok := m.args[NewMessageKey(m.nsalias2nsuri[parts[0]], parts[1])]
+				if !ok {
+					err = ErrValueNotFound
+					return
+				}
+				value = v.String()
+			}
+		} else if parts[0] == "ns" {
+			value = m.namespace.String()
+		} else {
+			v, ok := m.args[NewMessageKey(m.namespace, parts[0])]
+			if !ok {
+				err = ErrValueNotFound
+				return
+			}
+			value = v.String()
+		}
+
+		if err = validator(key, true); err != nil {
+			return
+		} else if err = validator(value, false); err != nil {
+			return
+		}
+
+		lines = append(
+			lines,
+			[]byte(fmt.Sprintf("%s:%s", key, value)),
+		)
+	}
+
+	b = bytes.Join(lines, []byte{'\n'})
+	return
 }
 
 func MessageFromQuery(req url.Values) (msg Message, err error) {

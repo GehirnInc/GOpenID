@@ -1,6 +1,7 @@
 package gopenid
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/url"
@@ -208,4 +209,12 @@ func TestMessage(t *testing.T) {
 			"openid.return_to":    []string{"http://www.example.com/"},
 		},
 	)
+
+	if kv, err := msg.ToKeyValue([]string{"openid.ns", "openid.return_to"}); assert.Nil(t, err) {
+		expected := bytes.Join([][]byte{
+			[]byte(fmt.Sprintf("openid.ns:%s", NsOpenID20.String())),
+			[]byte("openid.return_to:http://www.example.com/"),
+		}, []byte{'\n'})
+		assert.Equal(t, kv, expected)
+	}
 }
