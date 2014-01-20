@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"github.com/GehirnInc/GOpenID"
+	"strings"
 	"time"
 )
 
@@ -13,6 +14,7 @@ var (
 	ErrIdentityNotSet     = errors.New("identity not set")
 	ErrIdentitySet        = errors.New("identity set")
 	ErrIdentityNotMatched = errors.New("identity not matched")
+	ErrMessageNotSigned   = errors.New("message is not signed")
 )
 
 type Signer struct {
@@ -28,6 +30,77 @@ func (s *Signer) Invalidate(handle string, isStateless bool) (err error) {
 
 	err = s.store.DeleteAssociation(assoc)
 	return
+}
+
+func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
+	msg := req.GetMessage()
+	verify := msg.Copy()
+
+	assocHandle, ok := msg.GetArg(
+		gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "assoc_handle"),
+	)
+	if !ok {
+		err = ErrMessageNotSigned
+		return
+	}
+
+	_order, ok := msg.GetArg(
+		gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "signed"),
+	)
+	if !ok {
+		err = ErrMessageNotSigned
+		return
+	}
+	order := strings.Split(_order.String(), ",")
+
+	sig, ok := msg.GetArg(
+		gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "sig"),
+	)
+	if !ok {
+		err = ErrMessageNotSigned
+		return
+	}
+
+	assoc, err := s.store.GetAssociation(assocHandle.String(), isStateless)
+	if err != nil {
+		return
+	}
+
+	err = assoc.Sign(verify, order)
+	if err != nil {
+		return
+	}
+	expected, _ := msg.GetArg(gopenid.NewMessageKey(verify.GetOpenIDNamespace(), "sig"))
+
+	ok = sig == expected
+	return
+}
+
+func (s *Signer) Sign(res *Response, assocHandle string) (err error) {
+	assoc, err := s.getAssociation(assocHandle)
+	if err != nil {
+		return
+	}
+
+	order := []string{
+		"op_endpoint",
+		"return_to",
+		"response_nonce",
+		"assoc_handle",
+		"claimed_id",
+		"identity",
+	}
+
+	if _, ok := res.message.GetArg(gopenid.NewMessageKey(res.message.GetOpenIDNamespace(), "identity")); !ok {
+		order = order[:5]
+	}
+
+	if _, ok := res.message.GetArg(gopenid.NewMessageKey(res.message.GetOpenIDNamespace(), "claimed_id")); !ok {
+		copy(order[4:], order[len(order)-1:])
+		order = order[:len(order)-1]
+	}
+
+	return assoc.Sign(res.message, order)
 }
 
 func (s *Signer) getExpires() int64 {
