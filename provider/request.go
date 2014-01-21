@@ -182,6 +182,7 @@ func (req *CheckAuthenticationRequest) GetMessage() gopenid.Message {
 
 type AssociateRequest struct {
 	message gopenid.Message
+	err     error
 
 	mode        gopenid.MessageValue
 	assocType   gopenid.AssocType
@@ -202,15 +203,13 @@ func AssociateRequestFromMessage(msg gopenid.Message) (req *AssociateRequest, er
 	assocTypeName, _ := msg.GetArg(gopenid.NewMessageKey(ns, "assoc_type"))
 	req.assocType, err = gopenid.GetAssocTypeByName(assocTypeName.String())
 	if err != nil {
-		err = ErrInvalidAssociateRequest
-		return
+		req.err = err
 	}
 
 	sessionTypeName, _ := msg.GetArg(gopenid.NewMessageKey(ns, "session_type"))
 	req.sessionType, err = gopenid.GetSessionTypeByName(sessionTypeName.String())
 	if err != nil {
-		err = ErrInvalidAssociateRequest
-		return
+		req.err = err
 	}
 
 	if req.sessionType.Name() != gopenid.SESSION_NO_ENCRYPTION.Name() {
