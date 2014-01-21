@@ -68,6 +68,10 @@ func (t *AssocType) Name() string {
 	return t.name
 }
 
+func (t *AssocType) Hash() hash.Hash {
+	return t.hashFunc()
+}
+
 func (t *AssocType) GetSecretSize() int {
 	return t.secretSize
 }
