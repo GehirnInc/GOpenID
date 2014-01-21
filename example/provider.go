@@ -39,7 +39,7 @@ func main() {
 	store := &FileStore{}
 	p := provider.NewProvider("http://localhost:6543/", store, ASSOCIATION_LIFETIME)
 
-	http.HandleFunc("/checkid", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/openid", func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
 			http.Error(w, err.Error(), 400)
@@ -52,35 +52,47 @@ func main() {
 			return
 		}
 
-		log.Println(msg)
-
 		session, err := p.EstablishSession(msg)
 		if err != nil {
 			http.Error(w, err.Error(), 400)
 			return
 		}
 
-		ret, ok := session.(*provider.CheckIDSession)
-		if !ok {
-			http.Error(w, "openid.mode mismatched", 400)
-			return
-		}
+		switch ret := session.(type) {
+		case *provider.CheckIDSession:
+			ret.Accept("", "")
+			res, err := ret.GetResponse()
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
 
-		ret.Accept("", "")
-		res, err := ret.GetResponse()
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
+			resMsg := res.GetMessage()
 
-		resMsg := res.GetMessage()
+			returnTo, ok := msg.GetArg(gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "return_to"))
+			if ok {
+				u, _ := url.Parse(returnTo.String())
+				u.RawQuery = resMsg.ToQuery().Encode()
+				http.Redirect(w, r, u.String(), 302)
+				return
+			}
+		case *provider.AssociateSession:
+			res, err := ret.GetResponse()
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
 
-		returnTo, ok := msg.GetArg(gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "return_to"))
-		if ok {
-			u, _ := url.Parse(returnTo.String())
-			u.RawQuery = resMsg.ToQuery().Encode()
-			http.Redirect(w, r, u.String(), 302)
+			resMsg := res.GetMessage()
+			kv, err := resMsg.ToKeyValue([]string{"openid.ns", "openid.assoc_handle", "openid.session_type", "openid.assoc_type", "openid.expires_in", "openid.mac_key"})
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+
+			w.Write(kv)
 			return
+		case *provider.CheckAuthenticationSession:
 		}
 	})
 
