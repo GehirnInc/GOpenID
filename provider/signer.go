@@ -83,7 +83,7 @@ func (s *Signer) Sign(res *Response, assocHandle string) (err error) {
 	if assocHandle == "" {
 		assoc, err = gopenid.CreateAssociation(
 			rand.Reader,
-			gopenid.ASSOC_HMAC_SHA256,
+			gopenid.ASSOC_DEFAULT,
 			s.getExpires(),
 			true,
 		)
@@ -111,7 +111,7 @@ func (s *Signer) Sign(res *Response, assocHandle string) (err error) {
 
 			assoc, err = gopenid.CreateAssociation(
 				rand.Reader,
-				gopenid.ASSOC_HMAC_SHA256,
+				gopenid.ASSOC_DEFAULT,
 				s.getExpires(),
 				true,
 			)
