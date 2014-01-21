@@ -9,12 +9,13 @@ import (
 )
 
 var (
-	ErrAlreadySigned      = errors.New("response has been signed")
-	ErrNotNeedsSigning    = errors.New("response does not need signing")
-	ErrIdentityNotSet     = errors.New("identity not set")
-	ErrIdentitySet        = errors.New("identity set")
-	ErrIdentityNotMatched = errors.New("identity not matched")
-	ErrMessageNotSigned   = errors.New("message is not signed")
+	ErrAlreadySigned         = errors.New("response has been signed")
+	ErrNotNeedsSigning       = errors.New("response does not need signing")
+	ErrIdentityNotSet        = errors.New("identity not set")
+	ErrIdentitySet           = errors.New("identity set")
+	ErrIdentityNotMatched    = errors.New("identity not matched")
+	ErrMessageNotSigned      = errors.New("message is not signed")
+	ErrVerifyingNotSupported = errors.New("verifying not supported")
 )
 
 type Signer struct {
@@ -40,31 +41,19 @@ func (s *Signer) Invalidate(handle string, isStateless bool) (err error) {
 }
 
 func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
-	msg := req.GetMessage()
-	verify := msg.Copy()
-
-	assocHandle, ok := msg.GetArg(
-		gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "assoc_handle"),
+	var (
+		assocHandle gopenid.MessageValue
+		signed      gopenid.MessageValue
+		sig         gopenid.MessageValue
 	)
-	if !ok {
-		err = ErrMessageNotSigned
-		return
-	}
 
-	_order, ok := msg.GetArg(
-		gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "signed"),
-	)
-	if !ok {
-		err = ErrMessageNotSigned
-		return
-	}
-	order := strings.Split(_order.String(), ",")
-
-	sig, ok := msg.GetArg(
-		gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "sig"),
-	)
-	if !ok {
-		err = ErrMessageNotSigned
+	switch ret := req.(type) {
+	case *CheckAuthenticationRequest:
+		assocHandle = ret.assocHandle
+		signed = ret.signed
+		sig = ret.sig
+	default:
+		err = ErrVerifyingNotSupported
 		return
 	}
 
@@ -73,13 +62,18 @@ func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
 		return
 	}
 
-	err = assoc.Sign(verify, order)
-	if err != nil {
+	// signing
+	msg := req.GetMessage()
+	verify := msg.Copy()
+	if err = assoc.Sign(verify, strings.Split(signed.String(), ",")); err != nil {
 		return
 	}
-	expected, _ := msg.GetArg(gopenid.NewMessageKey(verify.GetOpenIDNamespace(), "sig"))
 
+	expected, _ := verify.GetArg(
+		gopenid.NewMessageKey(verify.GetOpenIDNamespace(), "sig"),
+	)
 	ok = sig == expected
+
 	return
 }
 

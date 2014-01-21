@@ -115,9 +115,11 @@ func (req *CheckIDRequest) GetMessage() gopenid.Message {
 type CheckAuthenticationRequest struct {
 	message gopenid.Message
 
-	mode        gopenid.MessageValue
-	assocHandle gopenid.MessageValue
-	sig         gopenid.MessageValue
+	mode          gopenid.MessageValue
+	assocHandle   gopenid.MessageValue
+	signed        gopenid.MessageValue
+	sig           gopenid.MessageValue
+	responseNonce gopenid.MessageValue
 }
 
 func CheckAuthenticationRequestFromMessage(msg gopenid.Message) (req *CheckAuthenticationRequest, err error) {
@@ -136,7 +138,19 @@ func CheckAuthenticationRequestFromMessage(msg gopenid.Message) (req *CheckAuthe
 		return
 	}
 
+	signed, ok := msg.GetArg(gopenid.NewMessageKey(ns, "signed"))
+	if !ok {
+		err = ErrInvalidCheckAuthenticationRequest
+		return
+	}
+
 	sig, ok := msg.GetArg(gopenid.NewMessageKey(ns, "sig"))
+	if !ok {
+		err = ErrInvalidCheckAuthenticationRequest
+		return
+	}
+
+	responseNonce, ok := msg.GetArg(gopenid.NewMessageKey(ns, "response_nonce"))
 	if !ok {
 		err = ErrInvalidCheckAuthenticationRequest
 		return
@@ -145,9 +159,11 @@ func CheckAuthenticationRequestFromMessage(msg gopenid.Message) (req *CheckAuthe
 	req = &CheckAuthenticationRequest{
 		message: msg,
 
-		mode:        mode,
-		assocHandle: assocHandle,
-		sig:         sig,
+		mode:          mode,
+		assocHandle:   assocHandle,
+		signed:        signed,
+		sig:           sig,
+		responseNonce: responseNonce,
 	}
 	return
 }
