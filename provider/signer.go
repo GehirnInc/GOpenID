@@ -78,9 +78,46 @@ func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
 }
 
 func (s *Signer) Sign(res *Response, assocHandle string) (err error) {
-	assoc, err := s.getAssociation(assocHandle)
-	if err != nil {
-		return
+	var assoc *gopenid.Association
+
+	if assocHandle == "" {
+		assoc, err = gopenid.CreateAssociation(
+			rand.Reader,
+			gopenid.ASSOC_HMAC_SHA256,
+			s.getExpires(),
+			true,
+		)
+	} else {
+		assoc, err = s.store.GetAssociation(assocHandle, false)
+		if err == nil {
+			if !assoc.IsValid() {
+				res.AddArg(
+					gopenid.NewMessageKey(res.GetNamespace(), "invalidate_handle"),
+					gopenid.MessageValue(assocHandle),
+				)
+
+				assoc, err = gopenid.CreateAssociation(
+					rand.Reader,
+					assoc.GetAssocType(),
+					s.getExpires(),
+					true,
+				)
+			}
+		} else if err == gopenid.ErrAssociationNotFound {
+			res.AddArg(
+				gopenid.NewMessageKey(res.GetNamespace(), "invalidate_handle"),
+				gopenid.MessageValue(assocHandle),
+			)
+
+			assoc, err = gopenid.CreateAssociation(
+				rand.Reader,
+				gopenid.ASSOC_HMAC_SHA256,
+				s.getExpires(),
+				true,
+			)
+		} else {
+			return
+		}
 	}
 
 	order := []string{
@@ -106,53 +143,4 @@ func (s *Signer) Sign(res *Response, assocHandle string) (err error) {
 
 func (s *Signer) getExpires() int64 {
 	return time.Now().Unix() + s.lifetime
-}
-
-func (s *Signer) getAssociation(assocHandle string) (assoc *gopenid.Association, err error) {
-	var (
-		DEFAULT_ASSOC_TYPE = gopenid.ASSOC_HMAC_SHA1
-	)
-
-	if assocHandle == "" {
-		assoc, err = gopenid.CreateAssociation(
-			rand.Reader,
-			DEFAULT_ASSOC_TYPE,
-			s.getExpires(),
-			true,
-		)
-	} else {
-		assoc, err = s.store.GetAssociation(assocHandle, false)
-		if err == nil {
-			if !assoc.IsValid() {
-				assoc, err = gopenid.CreateAssociation(
-					rand.Reader,
-					assoc.GetAssocType(),
-					s.getExpires(),
-					true,
-				)
-			}
-		} else if err == gopenid.ErrAssociationNotFound {
-			assoc, err = gopenid.CreateAssociation(
-				rand.Reader,
-				DEFAULT_ASSOC_TYPE,
-				s.getExpires(),
-				true,
-			)
-		} else {
-			return
-		}
-	}
-
-	if err != nil {
-		return
-	}
-
-	if assoc.IsStateless() {
-		err = s.store.StoreAssociation(assoc)
-		if err != nil {
-			return
-		}
-	}
-
-	return
 }
