@@ -77,7 +77,7 @@ func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
 	return
 }
 
-func (s *Signer) Sign(res *Response, assocHandle string) (err error) {
+func (s *Signer) Sign(res *Response, assocHandle string, order []string) (err error) {
 	var assoc *gopenid.Association
 
 	if assocHandle == "" {
@@ -118,24 +118,6 @@ func (s *Signer) Sign(res *Response, assocHandle string) (err error) {
 		} else {
 			return
 		}
-	}
-
-	order := []string{
-		"op_endpoint",
-		"return_to",
-		"response_nonce",
-		"assoc_handle",
-		"claimed_id",
-		"identity",
-	}
-
-	if _, ok := res.message.GetArg(gopenid.NewMessageKey(res.message.GetOpenIDNamespace(), "identity")); !ok {
-		order = order[:5]
-	}
-
-	if _, ok := res.message.GetArg(gopenid.NewMessageKey(res.message.GetOpenIDNamespace(), "claimed_id")); !ok {
-		copy(order[4:], order[len(order)-1:])
-		order = order[:len(order)-1]
 	}
 
 	return assoc.Sign(res.message, order)

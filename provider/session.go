@@ -85,7 +85,25 @@ func (s *CheckIDSession) buildResponse() (res *Response, err error) {
 			return
 		}
 
-		err = s.provider.signer.Sign(res, s.request.assocHandle.String())
+		order := []string{
+			"op_endpoint",
+			"return_to",
+			"response_nonce",
+			"assoc_handle",
+			"claimed_id",
+			"identity",
+		}
+
+		if _, ok := res.message.GetArg(gopenid.NewMessageKey(res.message.GetOpenIDNamespace(), "identity")); !ok {
+			order = order[:5]
+		}
+
+		if _, ok := res.message.GetArg(gopenid.NewMessageKey(res.message.GetOpenIDNamespace(), "claimed_id")); !ok {
+			copy(order[4:], order[len(order)-1:])
+			order = order[:len(order)-1]
+		}
+
+		err = s.provider.signer.Sign(res, s.request.assocHandle.String(), order)
 	} else {
 		res = s.getRejectedResponse()
 	}
