@@ -26,3 +26,7 @@ func (res *Response) AddArg(key gopenid.MessageKey, value gopenid.MessageValue) 
 func (res *Response) GetArg(key gopenid.MessageKey) (gopenid.MessageValue, bool) {
 	return res.message.GetArg(key)
 }
+
+func (res *Response) GetMessage() gopenid.Message {
+	return res.message
+}
