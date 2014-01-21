@@ -53,6 +53,9 @@ var (
 			ASSOC_HMAC_SHA256,
 		},
 	}
+
+	SESSION_DEFAULT = SESSION_DH_SHA256
+	ASSOC_DEFAULT   = ASSOC_HMAC_SHA256
 )
 
 type AssocType struct {
