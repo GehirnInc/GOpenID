@@ -183,11 +183,17 @@ func (assoc *Association) Sign(msg Message, signed []string) (err error) {
 		order[i] = fmt.Sprintf("openid.%s", key)
 	}
 
-	mac := hmac.New(assoc.assocType.hashFunc, assoc.secret)
+	msg.AddArg(
+		NewMessageKey(msg.GetOpenIDNamespace(), "assoc_handle"),
+		MessageValue(assoc.GetHandle()),
+	)
+
 	kv, err := msg.ToKeyValue(order)
 	if err != nil {
 		return
 	}
+
+	mac := hmac.New(assoc.assocType.hashFunc, assoc.secret)
 	mac.Write(kv)
 	sig, err := EncodeBase64(mac.Sum(nil))
 	if err != nil {
