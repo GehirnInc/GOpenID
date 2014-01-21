@@ -18,11 +18,11 @@ var (
 )
 
 type Signer struct {
-	store    gopenid.AssociationStore
+	store    gopenid.Store
 	lifetime int64
 }
 
-func NewSigner(store gopenid.AssociationStore, lifetime int64) *Signer {
+func NewSigner(store gopenid.Store, lifetime int64) *Signer {
 	return &Signer{
 		store:    store,
 		lifetime: lifetime,
