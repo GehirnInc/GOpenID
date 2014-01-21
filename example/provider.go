@@ -37,7 +37,7 @@ func (s *FileStore) StoreNonce(nonce string) error {
 
 func main() {
 	store := &FileStore{}
-	p := provider.NewProvider("http://localhost:6543", store, ASSOCIATION_LIFETIME)
+	p := provider.NewProvider("http://localhost:6543/", store, ASSOCIATION_LIFETIME)
 
 	http.HandleFunc("/checkid", func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
