@@ -22,6 +22,13 @@ type Signer struct {
 	lifetime int64
 }
 
+func NewSigner(store gopenid.AssociationStore, lifetime int64) *Signer {
+	return &Signer{
+		store:    store,
+		lifetime: lifetime,
+	}
+}
+
 func (s *Signer) Invalidate(handle string, isStateless bool) (err error) {
 	assoc, err := s.store.GetAssociation(handle, isStateless)
 	if err != nil {
