@@ -57,6 +57,11 @@ func main() {
 			return
 		}
 
+		switch ret := session.(type) {
+		case *provider.CheckIDSession:
+			ret.Accept("", "")
+		}
+
 		res, err := session.GetResponse()
 		if err != nil {
 			http.Error(w, err.Error(), 500)
