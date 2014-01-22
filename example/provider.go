@@ -5,7 +5,6 @@ import (
 	"github.com/GehirnInc/GOpenID/provider"
 	"log"
 	"net/http"
-	"net/url"
 )
 
 const (
@@ -58,41 +57,21 @@ func main() {
 			return
 		}
 
-		switch ret := session.(type) {
-		case *provider.CheckIDSession:
-			ret.Accept("", "")
-			res, err := ret.GetResponse()
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				return
-			}
-
-			resMsg := res.GetMessage()
-
-			returnTo, ok := msg.GetArg(gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "return_to"))
-			if ok {
-				u, _ := url.Parse(returnTo.String())
-				u.RawQuery = resMsg.ToQuery().Encode()
-				http.Redirect(w, r, u.String(), 302)
-				return
-			}
-		case *provider.AssociateSession:
-			res, err := ret.GetResponse()
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				return
-			}
-
-			resMsg := res.GetMessage()
-			kv, err := resMsg.ToKeyValue([]string{"openid.ns", "openid.assoc_handle", "openid.session_type", "openid.assoc_type", "openid.expires_in", "openid.mac_key"})
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				return
-			}
-
-			w.Write(kv)
+		res, err := session.GetResponse()
+		if err != nil {
+			http.Error(w, err.Error(), 500)
 			return
-		case *provider.CheckAuthenticationSession:
+		}
+
+		if res.NeedsRedirect() {
+			status := http.StatusFound
+			if res.IsPermanently() {
+				status = http.StatusMovedPermanently
+			}
+			http.Redirect(w, r, res.GetRedirectTo(), status)
+		} else {
+			w.Header().Set("Content-Type", res.GetContentType())
+			w.Write(res.GetBody())
 		}
 	})
 
