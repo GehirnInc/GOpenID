@@ -174,6 +174,32 @@ func (m *Message) ToQuery() url.Values {
 
 	return query
 }
+func (m *Message) Keys() []string {
+	ret := make([]string, 0, len(m.args))
+
+	for key := range m.args {
+		parts := make([]string, 0, 3)
+		parts = append(parts, "openid")
+
+		if nsalias, ok := m.GetNamespaceAlias(key.GetNamespace()); !ok {
+			continue
+		} else if nsalias != "" {
+			parts = append(parts, nsalias)
+		}
+
+		parts = append(parts, key.GetKey())
+
+		ret = append(
+			ret,
+			strings.Join(parts, "."),
+		)
+	}
+
+	fmt.Println(ret)
+
+	return ret
+
+}
 
 func (m *Message) ToKeyValue(order []string) (b []byte, err error) {
 	validator := func(str string, isKey bool) error {
