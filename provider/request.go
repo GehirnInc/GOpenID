@@ -86,6 +86,8 @@ func CheckIDRequestFromMessage(msg gopenid.Message) (req *CheckIDRequest, err er
 			err = ErrInvalidCheckIDRequest
 			return
 		}
+	} else {
+		realm = returnTo
 	}
 
 	req = &CheckIDRequest{
