@@ -142,7 +142,7 @@ func (s *CheckIDSession) getAcceptedResponse() (res *Response, err error) {
 		return
 	}
 
-	res = NewResponse(s.request.GetNamespace())
+	res = NewResponse(s.request)
 	res.AddArg(gopenid.NewMessageKey(s.request.GetNamespace(), "mode"), "id_res")
 	res.AddArg(
 		gopenid.NewMessageKey(s.request.GetNamespace(), "op_endpoint"),
@@ -159,7 +159,7 @@ func (s *CheckIDSession) getAcceptedResponse() (res *Response, err error) {
 }
 
 func (s *CheckIDSession) getRejectedResponse() (res *Response) {
-	res = NewResponse(s.request.GetNamespace())
+	res = NewResponse(s.request)
 
 	var mode gopenid.MessageValue = "cancel"
 	if s.request.mode == "checkid_immediate" {
@@ -218,7 +218,7 @@ func (s *AssociateSession) buildResponse() (res *Response, err error) {
 		return s.buildFailedResponse(err.Error()), nil
 	}
 
-	res = NewResponse(s.request.GetNamespace())
+	res = NewResponse(s.request)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "assoc_handle"),
 		gopenid.MessageValue(assoc.GetHandle()),
@@ -291,7 +291,7 @@ func (s *AssociateSession) buildResponse() (res *Response, err error) {
 }
 
 func (s *AssociateSession) buildFailedResponse(err string) (res *Response) {
-	res = NewResponse(s.request.GetNamespace())
+	res = NewResponse(s.request)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "error"),
 		gopenid.MessageValue(err),
@@ -347,7 +347,7 @@ func (s *CheckAuthenticationSession) buildResponse() (res *Response, err error) 
 		return
 	}
 
-	res = NewResponse(gopenid.NsOpenID20)
+	res = NewResponse(s.request)
 
 	if isValid {
 		res.AddArg(gopenid.NewMessageKey(res.GetNamespace(), "is_valid"), "true")
