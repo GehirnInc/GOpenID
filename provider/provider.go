@@ -30,3 +30,40 @@ func (p *Provider) EstablishSession(msg gopenid.Message) (Session, error) {
 func (p *Provider) getAssocExpires() int64 {
 	return time.Now().Unix() + p.assocLifetime
 }
+
+func (p *Provider) GetYadisProviderIdentifier() Response {
+	et := &gopenid.XRDSDocument{
+		XRD: gopenid.XRDSXRDElement{
+			Services: []gopenid.XRDSServiceElement{
+				gopenid.XRDSServiceElement{
+					Priority: 1,
+					Type: []string{
+						gopenid.NsOpenID20Server.String(),
+					},
+					URI: p.endpoint,
+				},
+			},
+		},
+	}
+
+	return NewYadisResponse(et)
+}
+
+func (p *Provider) GetYadisClaimedIdentifier(localid string) Response {
+	et := &gopenid.XRDSDocument{
+		XRD: gopenid.XRDSXRDElement{
+			Services: []gopenid.XRDSServiceElement{
+				gopenid.XRDSServiceElement{
+					Priority: 1,
+					Type: []string{
+						gopenid.NsOpenID20Server.String(),
+					},
+					URI:     p.endpoint,
+					LocalID: localid,
+				},
+			},
+		},
+	}
+
+	return NewYadisResponse(et)
+}
