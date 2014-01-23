@@ -90,3 +90,34 @@ func (res *OpenIDResponse) GetBody() []byte {
 func (res *OpenIDResponse) GetContentType() string {
 	return res.contentType
 }
+
+type YadisResponse struct {
+	et *gopenid.XRDSDocument
+}
+
+func NewYadisResponse(et *gopenid.XRDSDocument) *YadisResponse {
+	return &YadisResponse{
+		et: et,
+	}
+}
+
+func (res *YadisResponse) NeedsRedirect() bool {
+	return false
+}
+
+func (res *YadisResponse) IsPermanently() bool {
+	return false
+}
+
+func (res *YadisResponse) GetRedirectTo() string {
+	return ""
+}
+
+func (res *YadisResponse) GetBody() (b []byte) {
+	b, _ = gopenid.EncodeXRDS(res.et)
+	return
+}
+
+func (res *YadisResponse) GetContentType() string {
+	return "application/xrds+xml"
+}
