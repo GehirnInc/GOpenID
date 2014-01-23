@@ -19,7 +19,7 @@ type Session interface {
 	SetProvider(*Provider)
 	SetRequest(Request)
 	GetRequest() Request
-	GetResponse() (*Response, error)
+	GetResponse() (*OpenIDResponse, error)
 }
 
 func SessionFromMessage(p *Provider, msg gopenid.Message) (s Session, err error) {
@@ -69,16 +69,11 @@ func (s *CheckIDSession) Accept(identity, claimedId string) {
 	s.claimedId = claimedId
 }
 
-func (s *CheckIDSession) GetResponse() (res *Response, err error) {
-	res, err = s.buildResponse()
-	if err != nil {
-		return
-	}
-
-	return
+func (s *CheckIDSession) GetResponse() (*OpenIDResponse, error) {
+	return s.buildResponse()
 }
 
-func (s *CheckIDSession) buildResponse() (res *Response, err error) {
+func (s *CheckIDSession) buildResponse() (res *OpenIDResponse, err error) {
 	if s.accepted {
 		res, err = s.getAcceptedResponse()
 		if err != nil {
@@ -111,7 +106,7 @@ func (s *CheckIDSession) buildResponse() (res *Response, err error) {
 	return
 }
 
-func (s *CheckIDSession) getAcceptedResponse() (res *Response, err error) {
+func (s *CheckIDSession) getAcceptedResponse() (res *OpenIDResponse, err error) {
 	var (
 		identity  gopenid.MessageValue
 		claimedId gopenid.MessageValue
@@ -142,7 +137,7 @@ func (s *CheckIDSession) getAcceptedResponse() (res *Response, err error) {
 		return
 	}
 
-	res = NewResponse(s.request)
+	res = NewOpenIDResponse(s.request)
 	res.AddArg(gopenid.NewMessageKey(s.request.GetNamespace(), "mode"), "id_res")
 	res.AddArg(
 		gopenid.NewMessageKey(s.request.GetNamespace(), "op_endpoint"),
@@ -158,8 +153,8 @@ func (s *CheckIDSession) getAcceptedResponse() (res *Response, err error) {
 	return
 }
 
-func (s *CheckIDSession) getRejectedResponse() (res *Response) {
-	res = NewResponse(s.request)
+func (s *CheckIDSession) getRejectedResponse() (res *OpenIDResponse) {
+	res = NewOpenIDResponse(s.request)
 
 	var mode gopenid.MessageValue = "cancel"
 	if s.request.mode == "checkid_immediate" {
@@ -199,11 +194,11 @@ func (s *AssociateSession) GetRequest() Request {
 	return s.request
 }
 
-func (s *AssociateSession) GetResponse() (*Response, error) {
+func (s *AssociateSession) GetResponse() (*OpenIDResponse, error) {
 	return s.buildResponse()
 }
 
-func (s *AssociateSession) buildResponse() (res *Response, err error) {
+func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 	if s.request.err != nil {
 		return s.buildFailedResponse(s.request.err.Error()), nil
 	}
@@ -218,7 +213,7 @@ func (s *AssociateSession) buildResponse() (res *Response, err error) {
 		return s.buildFailedResponse(err.Error()), nil
 	}
 
-	res = NewResponse(s.request)
+	res = NewOpenIDResponse(s.request)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "assoc_handle"),
 		gopenid.MessageValue(assoc.GetHandle()),
@@ -290,8 +285,8 @@ func (s *AssociateSession) buildResponse() (res *Response, err error) {
 	return
 }
 
-func (s *AssociateSession) buildFailedResponse(err string) (res *Response) {
-	res = NewResponse(s.request)
+func (s *AssociateSession) buildFailedResponse(err string) (res *OpenIDResponse) {
+	res = NewOpenIDResponse(s.request)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "error"),
 		gopenid.MessageValue(err),
@@ -329,11 +324,11 @@ func (s *CheckAuthenticationSession) GetRequest() Request {
 	return s.request
 }
 
-func (s *CheckAuthenticationSession) GetResponse() (*Response, error) {
+func (s *CheckAuthenticationSession) GetResponse() (*OpenIDResponse, error) {
 	return s.buildResponse()
 }
 
-func (s *CheckAuthenticationSession) buildResponse() (res *Response, err error) {
+func (s *CheckAuthenticationSession) buildResponse() (res *OpenIDResponse, err error) {
 	isKnown, err := s.provider.store.IsKnownNonce(s.request.responseNonce.String())
 	if err != nil {
 		return
@@ -347,7 +342,7 @@ func (s *CheckAuthenticationSession) buildResponse() (res *Response, err error) 
 		return
 	}
 
-	res = NewResponse(s.request)
+	res = NewOpenIDResponse(s.request)
 
 	if isValid {
 		res.AddArg(gopenid.NewMessageKey(res.GetNamespace(), "is_valid"), "true")

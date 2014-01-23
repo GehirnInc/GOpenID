@@ -77,7 +77,7 @@ func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
 	return
 }
 
-func (s *Signer) Sign(res *Response, assocHandle string, order []string) (err error) {
+func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (err error) {
 	var assoc *gopenid.Association
 
 	if assocHandle == "" {

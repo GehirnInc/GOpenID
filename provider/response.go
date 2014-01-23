@@ -5,7 +5,7 @@ import (
 	"net/url"
 )
 
-type Response struct {
+type OpenIDResponse struct {
 	request       Request
 	message       gopenid.Message
 	needsRedirect bool
@@ -14,8 +14,8 @@ type Response struct {
 	returnTo      string
 }
 
-func NewResponse(req Request) (res *Response) {
-	res = &Response{
+func NewOpenIDResponse(req Request) *OpenIDResponse {
+	res := &OpenIDResponse{
 		request: req,
 		message: gopenid.NewMessage(req.GetNamespace()),
 	}
@@ -35,34 +35,34 @@ func NewResponse(req Request) (res *Response) {
 		res.contentType = "text/plain;charset=utf8"
 	}
 
-	return
+	return res
 }
 
-func (res *Response) GetNamespace() gopenid.NamespaceURI {
+func (res *OpenIDResponse) GetNamespace() gopenid.NamespaceURI {
 	return res.message.GetOpenIDNamespace()
 }
 
-func (res *Response) AddArg(key gopenid.MessageKey, value gopenid.MessageValue) {
+func (res *OpenIDResponse) AddArg(key gopenid.MessageKey, value gopenid.MessageValue) {
 	res.message.AddArg(key, value)
 }
 
-func (res *Response) GetArg(key gopenid.MessageKey) (gopenid.MessageValue, bool) {
+func (res *OpenIDResponse) GetArg(key gopenid.MessageKey) (gopenid.MessageValue, bool) {
 	return res.message.GetArg(key)
 }
 
-func (res *Response) GetMessage() gopenid.Message {
+func (res *OpenIDResponse) GetMessage() gopenid.Message {
 	return res.message
 }
 
-func (res *Response) NeedsRedirect() bool {
+func (res *OpenIDResponse) NeedsRedirect() bool {
 	return res.needsRedirect
 }
 
-func (res *Response) IsPermanently() bool {
+func (res *OpenIDResponse) IsPermanently() bool {
 	return res.isPermanently
 }
 
-func (res *Response) GetRedirectTo() string {
+func (res *OpenIDResponse) GetRedirectTo() string {
 	redirectTo, _ := url.Parse(res.returnTo)
 	query := redirectTo.Query()
 
@@ -74,11 +74,11 @@ func (res *Response) GetRedirectTo() string {
 	return redirectTo.String()
 }
 
-func (res *Response) GetBody() []byte {
+func (res *OpenIDResponse) GetBody() []byte {
 	kv, _ := res.message.ToKeyValue(res.message.Keys())
 	return kv
 }
 
-func (res *Response) GetContentType() string {
+func (res *OpenIDResponse) GetContentType() string {
 	return res.contentType
 }
