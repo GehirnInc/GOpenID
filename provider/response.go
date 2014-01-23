@@ -5,6 +5,14 @@ import (
 	"net/url"
 )
 
+type Response interface {
+	NeedsRedirect() bool
+	IsPermanently() bool
+	GetRedirectTo() string
+	GetBody() []byte
+	GetContentType() string
+}
+
 type OpenIDResponse struct {
 	request       Request
 	message       gopenid.Message

@@ -19,7 +19,7 @@ type Session interface {
 	SetProvider(*Provider)
 	SetRequest(Request)
 	GetRequest() Request
-	GetResponse() (*OpenIDResponse, error)
+	GetResponse() (Response, error)
 }
 
 func SessionFromMessage(p *Provider, msg gopenid.Message) (s Session, err error) {
@@ -69,7 +69,7 @@ func (s *CheckIDSession) Accept(identity, claimedId string) {
 	s.claimedId = claimedId
 }
 
-func (s *CheckIDSession) GetResponse() (*OpenIDResponse, error) {
+func (s *CheckIDSession) GetResponse() (Response, error) {
 	return s.buildResponse()
 }
 
@@ -194,7 +194,7 @@ func (s *AssociateSession) GetRequest() Request {
 	return s.request
 }
 
-func (s *AssociateSession) GetResponse() (*OpenIDResponse, error) {
+func (s *AssociateSession) GetResponse() (Response, error) {
 	return s.buildResponse()
 }
 
@@ -324,7 +324,7 @@ func (s *CheckAuthenticationSession) GetRequest() Request {
 	return s.request
 }
 
-func (s *CheckAuthenticationSession) GetResponse() (*OpenIDResponse, error) {
+func (s *CheckAuthenticationSession) GetResponse() (Response, error) {
 	return s.buildResponse()
 }
 
