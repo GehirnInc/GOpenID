@@ -213,6 +213,11 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 		return s.buildFailedResponse(err.Error()), nil
 	}
 
+	err = s.provider.store.StoreAssociation(assoc)
+	if err != nil {
+		return
+	}
+
 	res = NewOpenIDResponse(s.request)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "assoc_handle"),

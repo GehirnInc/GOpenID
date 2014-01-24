@@ -120,6 +120,10 @@ func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (
 		}
 	}
 
+	if err == nil && assoc.IsStateless() {
+		err = s.store.StoreAssociation(assoc)
+	}
+
 	return assoc.Sign(res.message, order)
 }
 
