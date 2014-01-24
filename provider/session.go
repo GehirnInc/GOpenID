@@ -269,14 +269,14 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 		h.Write(shared.ZZ.Bytes())
 		hashedShared := h.Sum(nil)
 
-		dhMacKey := make([]byte, s.request.assocType.GetSecretSize())
+		encMacKey := make([]byte, s.request.assocType.GetSecretSize())
 		for i := 0; i < s.request.assocType.GetSecretSize(); i++ {
-			dhMacKey[i] = hashedShared[i] ^ secret[i]
+			encMacKey[i] = hashedShared[i] ^ secret[i]
 		}
-		dhMacKey = gopenid.EncodeBase64(dhMacKey)
+		encMacKey = gopenid.EncodeBase64(encMacKey)
 		res.AddArg(
-			gopenid.NewMessageKey(res.GetNamespace(), "dh_mac_key"),
-			gopenid.MessageValue(dhMacKey),
+			gopenid.NewMessageKey(res.GetNamespace(), "enc_mac_key"),
+			gopenid.MessageValue(encMacKey),
 		)
 	}
 
