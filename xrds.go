@@ -25,7 +25,6 @@ type XRDSXRDElement struct {
 
 type XRDSServiceElement struct {
 	XMLName  xml.Name `xml:"xri://$xrd*($v*2.0) Service"`
-	Attr     string   `xml:"http://example.com/ns attr,attr"`
 	Priority int      `xml:"priority,attr"`
 	Type     []string `xml:"Type"`
 	URI      string   `xml:"URI"`
