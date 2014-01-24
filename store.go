@@ -1,9 +1,9 @@
 package gopenid
 
 type Store interface {
-	StoreAssociation(*Association) error
-	GetAssociation(string, bool) (*Association, error)
-	DeleteAssociation(*Association) error
-	IsKnownNonce(string) (bool, error)
-	StoreNonce(string) error
+	StoreAssociation(*Association)
+	GetAssociation(string, bool) (*Association, bool)
+	DeleteAssociation(*Association)
+	IsKnownNonce(string) bool
+	StoreNonce(string)
 }

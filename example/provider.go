@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/GehirnInc/GOpenID"
 	"github.com/GehirnInc/GOpenID/provider"
 	"io/ioutil"
@@ -11,10 +12,14 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const (
 	ASSOCIATION_LIFETIME = 60 * 60 * 12 // 12 hours
+
+	URI_PREFIX   = "http://yosida95-ubuntu1:6543"
+	STORE_PREFIX = "/home/yosida95/src/GOpenID/src/github.com/GehirnInc/GOpenID/example/assocs/"
 )
 
 type FileStore struct {
@@ -30,16 +35,15 @@ func (s *FileStore) getAssocSavePath(handle string, isStateless bool) string {
 }
 
 func (s *FileStore) getNonceSvePath(nonce string) string {
-	ext := ".nonce"
-	return filepath.Join(s.prefix, nonce+ext)
+	return filepath.Join(s.prefix, nonce+".nonce")
 }
 
-func (s *FileStore) StoreAssociation(assoc *gopenid.Association) error {
+func (s *FileStore) StoreAssociation(assoc *gopenid.Association) {
 	f, err := os.Create(
 		s.getAssocSavePath(assoc.GetHandle(), assoc.IsStateless()),
 	)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	defer f.Close()
 
@@ -49,65 +53,72 @@ func (s *FileStore) StoreAssociation(assoc *gopenid.Association) error {
 		assoc.GetSecret(),
 		[]byte(strconv.FormatInt(assoc.GetExpires(), 10)),
 	}, []byte{'\n'}))
-	return nil
 }
 
-func (s *FileStore) GetAssociation(assocHandle string, isStateless bool) (assoc *gopenid.Association, err error) {
+func (s *FileStore) GetAssociation(assocHandle string, isStateless bool) (assoc *gopenid.Association, ok bool) {
 	f, err := os.Open(s.getAssocSavePath(assocHandle, isStateless))
 	if err != nil {
-		return
+		if os.IsNotExist(err) {
+			return
+		}
+		panic(err)
 	}
 	defer f.Close()
 
 	b, err := ioutil.ReadAll(f)
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	parts := bytes.Split(b, []byte{'\n'})
 	if len(parts) != 3 {
-		err = errors.New("invalid association")
-		return
+		panic(errors.New("invalid association"))
 	}
 
 	assocType, err := gopenid.GetAssocTypeByName(string(parts[0]))
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	expires, err := strconv.ParseInt(string(parts[2]), 10, 64)
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	assoc = gopenid.NewAssociation(assocType, assocHandle, parts[1], expires, isStateless)
+	ok = true
 	return
 }
 
-func (s *FileStore) DeleteAssociation(assoc *gopenid.Association) error {
-	return os.Remove(s.getAssocSavePath(assoc.GetHandle(), assoc.IsStateless()))
+func (s *FileStore) DeleteAssociation(assoc *gopenid.Association) {
+	err := os.Remove(s.getAssocSavePath(assoc.GetHandle(), assoc.IsStateless()))
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (s *FileStore) IsKnownNonce(nonce string) (bool, error) {
+func (s *FileStore) IsKnownNonce(nonce string) bool {
 	f, err := os.Open(s.getNonceSvePath(nonce))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
+			return false
 		}
 
-		return false, err
+		panic(err)
 	}
 	defer f.Close()
-	return true, nil
+
+	return true
 }
 
-func (s *FileStore) StoreNonce(nonce string) error {
+func (s *FileStore) StoreNonce(nonce string) {
 	f, err := os.Create(s.getNonceSvePath(nonce))
 	if err != nil {
-		return err
+		panic(err)
 	}
 	defer f.Close()
-	return nil
+
+	return
 }
 
 type OpenIDProvider struct {
@@ -140,7 +151,6 @@ func (p *OpenIDProvider) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kv, _ := msg.ToKeyValue(msg.Keys())
 	session, err := p.p.EstablishSession(msg)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
@@ -161,12 +171,6 @@ func (p *OpenIDProvider) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch ret := res.(type) {
-	case *provider.OpenIDResponse:
-		msg := ret.GetMessage()
-		kv, _ := msg.ToKeyValue(msg.Keys())
-	}
-
 	p.respond(w, r, res)
 }
 
@@ -175,24 +179,31 @@ func (p *OpenIDProvider) serveProviderXRDS(w http.ResponseWriter, r *http.Reques
 }
 
 func (p *OpenIDProvider) serveClaimedXRDS(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.URL.Path)
-	p.respond(w, r, p.p.GetYadisClaimedIdentifier(""))
+	p.respond(
+		w, r,
+		p.p.GetYadisClaimedIdentifier(fmt.Sprintf("%s/users/%s",
+			URI_PREFIX,
+			strings.SplitN(r.URL.Path, "/", 3)[2],
+		)),
+	)
 }
 
 func main() {
-	store := &FileStore{
-		prefix: "/home/yosida95/src/GOpenID/src/github.com/GehirnInc/GOpenID/example/assocs/",
-	}
 	p := OpenIDProvider{
-		p: provider.NewProvider("http://yosida95-ubuntu1:6543/openid", store, ASSOCIATION_LIFETIME),
+		p: provider.NewProvider(
+			fmt.Sprintf("%s/openid", URI_PREFIX),
+			&FileStore{
+				prefix: STORE_PREFIX,
+			},
+			ASSOCIATION_LIFETIME,
+		),
 	}
 
 	http.HandleFunc("/openid", p.handleRequest)
 	http.HandleFunc("/xrds", p.serveProviderXRDS)
 	http.HandleFunc("/users/", p.serveClaimedXRDS)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("X-XRDS-Location", "http://yosida95-ubuntu1:6543/xrds")
-
+		w.Header().Set("X-XRDS-Location", fmt.Sprintf("%s/xrds", URI_PREFIX))
 		w.Write([]byte("OpenID 2.0 Sample Provider"))
 	})
 

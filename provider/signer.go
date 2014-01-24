@@ -30,13 +30,12 @@ func NewSigner(store gopenid.Store, lifetime int64) *Signer {
 	}
 }
 
-func (s *Signer) Invalidate(handle string, isStateless bool) (err error) {
-	assoc, err := s.store.GetAssociation(handle, isStateless)
-	if err != nil {
-		return
+func (s *Signer) Invalidate(handle string, isStateless bool) {
+	assoc, ok := s.store.GetAssociation(handle, isStateless)
+	if ok {
+		s.store.DeleteAssociation(assoc)
 	}
 
-	err = s.store.DeleteAssociation(assoc)
 	return
 }
 
@@ -57,8 +56,9 @@ func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
 		return
 	}
 
-	assoc, err := s.store.GetAssociation(assocHandle.String(), isStateless)
-	if err != nil {
+	assoc, ok := s.store.GetAssociation(assocHandle.String(), isStateless)
+	if !ok {
+		err = gopenid.ErrAssociationNotFound
 		return
 	}
 
@@ -78,7 +78,7 @@ func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
 }
 
 func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (err error) {
-	var assoc *gopenid.Association
+	var ssoc *gopenid.Association
 
 	if assocHandle == "" {
 		assoc, err = gopenid.CreateAssociation(
@@ -88,22 +88,10 @@ func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (
 			true,
 		)
 	} else {
-		assoc, err = s.store.GetAssociation(assocHandle, false)
-		if err == nil {
-			if !assoc.IsValid() {
-				res.AddArg(
-					gopenid.NewMessageKey(res.GetNamespace(), "invalidate_handle"),
-					gopenid.MessageValue(assocHandle),
-				)
+		var ok bool
 
-				assoc, err = gopenid.CreateAssociation(
-					rand.Reader,
-					assoc.GetAssocType(),
-					s.getExpires(),
-					true,
-				)
-			}
-		} else if err == gopenid.ErrAssociationNotFound {
+		assoc, ok = s.store.GetAssociation(assocHandle, false)
+		if !ok || !assoc.IsValid() {
 			res.AddArg(
 				gopenid.NewMessageKey(res.GetNamespace(), "invalidate_handle"),
 				gopenid.MessageValue(assocHandle),
@@ -115,8 +103,6 @@ func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (
 				s.getExpires(),
 				true,
 			)
-		} else {
-			return
 		}
 	}
 
@@ -125,12 +111,9 @@ func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (
 	}
 
 	if assoc.IsStateless() {
-		err = s.store.StoreAssociation(assoc)
+		s.store.StoreAssociation(assoc)
 	} else {
-		err = s.store.DeleteAssociation(assoc)
-		if err != nil {
-			return
-		}
+		s.store.DeleteAssociation(assoc)
 	}
 
 	return assoc.Sign(res.message, order)

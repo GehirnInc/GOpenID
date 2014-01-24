@@ -213,10 +213,7 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 		return s.buildFailedResponse(err.Error()), nil
 	}
 
-	err = s.provider.store.StoreAssociation(assoc)
-	if err != nil {
-		return
-	}
+	s.provider.store.StoreAssociation(assoc)
 
 	res = NewOpenIDResponse(s.request)
 	res.AddArg(
@@ -327,10 +324,7 @@ func (s *CheckAuthenticationSession) GetResponse() (Response, error) {
 }
 
 func (s *CheckAuthenticationSession) buildResponse() (res *OpenIDResponse, err error) {
-	isKnown, err := s.provider.store.IsKnownNonce(s.request.responseNonce.String())
-	if err != nil {
-		return
-	} else if isKnown {
+	if s.provider.store.IsKnownNonce(s.request.responseNonce.String()) {
 		err = ErrKnownNonce
 		return
 	}
@@ -354,6 +348,6 @@ func (s *CheckAuthenticationSession) buildResponse() (res *OpenIDResponse, err e
 		)
 	}
 
-	err = s.provider.signer.Invalidate(s.request.assocHandle.String(), true)
+	s.provider.signer.Invalidate(s.request.assocHandle.String(), true)
 	return
 }
