@@ -56,7 +56,7 @@ func (p *Provider) GetYadisClaimedIdentifier(localid string) Response {
 				gopenid.XRDSServiceElement{
 					Priority: 1,
 					Type: []string{
-						gopenid.NsOpenID20Server.String(),
+						gopenid.NsOpenID20Signon.String(),
 					},
 					URI:     p.endpoint,
 					LocalID: localid,
