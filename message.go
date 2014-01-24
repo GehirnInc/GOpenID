@@ -175,7 +175,8 @@ func (m *Message) ToQuery() url.Values {
 	return query
 }
 func (m *Message) Keys() []string {
-	ret := make([]string, 0, len(m.args))
+	ret := make([]string, 1, len(m.args)+1)
+	ret[0] = "openid.ns"
 
 	for key := range m.args {
 		parts := make([]string, 0, 3)
@@ -212,16 +213,17 @@ func (m *Message) ToKeyValue(order []string) (b []byte, err error) {
 		return nil
 	}
 
-	lines := make([][]byte, 0, len(order))
+	lines := make([][]byte, 0, len(order)+1)
 
 	for _, key := range order {
 		if !strings.HasPrefix(key, "openid.") {
 			err = ErrValueNotFound
 			return
 		}
-		var (
-			parts = strings.SplitN(key[7:], ".", 2)
+		key = key[7:]
 
+		var (
+			parts = strings.SplitN(key, ".", 2)
 			value string
 		)
 		if len(parts) > 1 {
@@ -262,8 +264,9 @@ func (m *Message) ToKeyValue(order []string) (b []byte, err error) {
 			[]byte(fmt.Sprintf("%s:%s", key, value)),
 		)
 	}
-
+	lines = append(lines, nil)
 	b = bytes.Join(lines, []byte{'\n'})
+
 	return
 }
 
