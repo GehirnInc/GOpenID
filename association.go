@@ -195,10 +195,7 @@ func (assoc *Association) Sign(msg Message, signed []string) (err error) {
 
 	mac := hmac.New(assoc.assocType.hashFunc, assoc.secret)
 	mac.Write(kv)
-	sig, err := EncodeBase64(mac.Sum(nil))
-	if err != nil {
-		return
-	}
+	sig := EncodeBase64(mac.Sum(nil))
 
 	msg.AddArg(
 		NewMessageKey(msg.GetOpenIDNamespace(), "signed"),

@@ -30,10 +30,8 @@ func init() {
 
 func TestSwitchWithBase64AndInt(t *testing.T) {
 	for _, testCase := range switchWithBase64AndIntCases {
-		b64, err := IntToBase64(testCase.int_)
-		if assert.Nil(t, err) {
-			assert.Equal(t, testCase.b64, string(b64))
-		}
+		b64 := IntToBase64(testCase.int_)
+		assert.Equal(t, testCase.b64, string(b64))
 
 		int_, err := Base64ToInt([]byte(testCase.b64))
 		if assert.Nil(t, err) {

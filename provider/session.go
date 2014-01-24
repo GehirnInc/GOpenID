@@ -232,11 +232,7 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 	)
 
 	if s.request.sessionType.Name() == gopenid.SESSION_NO_ENCRYPTION.Name() {
-		var macKey []byte
-		macKey, err = gopenid.EncodeBase64(assoc.GetSecret())
-		if err != nil {
-			return
-		}
+		macKey := gopenid.EncodeBase64(assoc.GetSecret())
 
 		res.AddArg(
 			gopenid.NewMessageKey(res.GetNamespace(), "mac_key"),
@@ -255,11 +251,7 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 			}
 		)
 
-		var serverPublic []byte
-		serverPublic, err = gopenid.EncodeBase64(key.PublicKey.Y.Bytes())
-		if err != nil {
-			return
-		}
+		serverPublic := gopenid.EncodeBase64(key.PublicKey.Y.Bytes())
 		res.AddArg(
 			gopenid.NewMessageKey(res.GetNamespace(), "dh_server_public"),
 			gopenid.MessageValue(serverPublic),
@@ -272,13 +264,14 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 		h.Write(shared.ZZ.Bytes())
 		hashedShared := h.Sum(nil)
 
-		encMacKey := make([]byte, s.request.assocType.GetSecretSize())
+		dhMacKey := make([]byte, s.request.assocType.GetSecretSize())
 		for i := 0; i < s.request.assocType.GetSecretSize(); i++ {
-			encMacKey[i] = hashedShared[i] ^ secret[i]
+			dhMacKey[i] = hashedShared[i] ^ secret[i]
 		}
+		dhMacKey = gopenid.EncodeBase64(dhMacKey)
 		res.AddArg(
 			gopenid.NewMessageKey(res.GetNamespace(), "dh_mac_key"),
-			gopenid.MessageValue(encMacKey),
+			gopenid.MessageValue(dhMacKey),
 		)
 	}
 

@@ -77,7 +77,7 @@ func TestCreateAssociation(t *testing.T) {
 				kv, err := msg.ToKeyValue([]string{"openid.mode", "openid.ns"})
 				if assert.Nil(t, err) {
 					mac.Write(kv)
-					expected, err := EncodeBase64(mac.Sum(nil))
+					expected := EncodeBase64(mac.Sum(nil))
 					if assert.Nil(t, err) {
 						assert.Equal(t, sig.String(), string(expected))
 					}
