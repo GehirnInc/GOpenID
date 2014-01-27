@@ -11,12 +11,9 @@ import (
 )
 
 const (
-	// Namespace for OpenID 1.0
-	NsOpenID10 NamespaceURI = "http://openid.net/signon/1.0"
-	// Namespace for OpenID 1.1
-	NsOpenID11 NamespaceURI = "http://openid.net/signon/1.1"
-	// Namespace for OpenID 2.0
-	NsOpenID20 NamespaceURI = "http://specs.openid.net/auth/2.0"
+	NsOpenID10 NamespaceURI = "http://openid.net/signon/1.0"     // Namespace for OpenID 1.0
+	NsOpenID11 NamespaceURI = "http://openid.net/signon/1.1"     // Namespace for OpenID 1.1
+	NsOpenID20 NamespaceURI = "http://specs.openid.net/auth/2.0" // Namespace for OpenID 2.0
 
 	NsIdentifierSelect NamespaceURI = "http://specs.openid.net/auth/2.0/identifier_select"
 )
@@ -56,17 +53,21 @@ var (
 	}
 )
 
+// NamespaceURI represents URI for Namespace.
 type NamespaceURI string
 
+// String returns as string.
 func (ns NamespaceURI) String() string {
 	return string(ns)
 }
 
+// MessageKey is a key of Message.
 type MessageKey struct {
 	namespace NamespaceURI
 	key       string
 }
 
+// NewMessageKey returns a new MessageKey given NamespaceURI, and key.
 func NewMessageKey(ns NamespaceURI, key string) MessageKey {
 	return MessageKey{
 		namespace: ns,
@@ -74,24 +75,30 @@ func NewMessageKey(ns NamespaceURI, key string) MessageKey {
 	}
 }
 
+// GetNamespace returns NamespaceURI of k.
 func (k *MessageKey) GetNamespace() NamespaceURI {
 	return k.namespace
 }
 
+// GetKey returns key of k.
 func (k *MessageKey) GetKey() string {
 	return k.key
 }
 
+// MessageValue is a value of Message.
 type MessageValue string
 
+// String returns v as string.
 func (v MessageValue) String() string {
 	return string(v)
 }
 
+// Bytes returns v as []byte.
 func (v MessageValue) Bytes() []byte {
 	return []byte(v)
 }
 
+// Message represents OpenID protocol message.
 type Message struct {
 	namespace     NamespaceURI
 	nsuri2nsalias map[NamespaceURI]string
@@ -100,6 +107,7 @@ type Message struct {
 	sync.Mutex
 }
 
+// NewMessage returns a new Message with the given NamespaceURI.
 func NewMessage(ns NamespaceURI) Message {
 	return Message{
 		namespace:     ns,
@@ -109,19 +117,24 @@ func NewMessage(ns NamespaceURI) Message {
 	}
 }
 
+// GetOpenIDNamespace returns NamespaceURI of m.
 func (m *Message) GetOpenIDNamespace() NamespaceURI {
 	return m.namespace
 }
 
+// GetNamespaceURI returns NamespaceURI mapped to the given alias.
+// If NamespaceURI does not exist, GetNamespaceURI returns false as 2nd return value.
 func (m *Message) GetNamespaceURI(alias string) (NamespaceURI, bool) {
 	if alias == "openid" {
 		return m.GetOpenIDNamespace(), true
-	} else {
-		nsuri, ok := m.nsalias2nsuri[alias]
-		return nsuri, ok
 	}
+
+	nsuri, ok := m.nsalias2nsuri[alias]
+	return nsuri, ok
 }
 
+// GetNamespaceAlias returns alias is pointing to the given NamespaceURI.
+// If alias does not exist, GetNamespaceURI returns false as 2nd return value.
 func (m *Message) GetNamespaceAlias(uri NamespaceURI) (string, bool) {
 	if uri == m.GetOpenIDNamespace() {
 		return "", true
@@ -131,20 +144,26 @@ func (m *Message) GetNamespaceAlias(uri NamespaceURI) (string, bool) {
 	return nsalias, ok
 }
 
+// SetNamespaceAlias is a function to register relationship between alias and NamespaceURI.
 func (m *Message) SetNamespaceAlias(alias string, uri NamespaceURI) {
 	m.nsuri2nsalias[uri] = alias
 	m.nsalias2nsuri[alias] = uri
 }
 
+// GetArg returns value of given k.
+// If value does not exist, GetArg returns false as 2nd return value.
 func (m *Message) GetArg(k MessageKey) (MessageValue, bool) {
 	v, ok := m.args[k]
 	return v, ok
 }
 
+// AddArg registers given the v as value of k.
 func (m *Message) AddArg(k MessageKey, v MessageValue) {
 	m.args[k] = v
 }
 
+// GetArgs returns the subset of m as map[MessageKey]MessageValue.
+// Returned subset contains values related to the given NamespaceURI.
 func (m *Message) GetArgs(nsuri NamespaceURI) map[MessageKey]MessageValue {
 	ret := make(map[MessageKey]MessageValue)
 
@@ -156,6 +175,7 @@ func (m *Message) GetArgs(nsuri NamespaceURI) map[MessageKey]MessageValue {
 	return ret
 }
 
+// ToQuery returns the m as url.Values.
 func (m *Message) ToQuery() url.Values {
 	query := url.Values{
 		"openid.ns": []string{m.namespace.String()},
@@ -177,6 +197,8 @@ func (m *Message) ToQuery() url.Values {
 
 	return query
 }
+
+// Keys returns all of keys m has.
 func (m *Message) Keys() []string {
 	ret := make([]string, 1, len(m.args)+1)
 	ret[0] = "openid.ns"
@@ -203,6 +225,8 @@ func (m *Message) Keys() []string {
 
 }
 
+// ToKeyValue returns part of m as KeyValue format.
+// Returnd KeyValue follows the given order.
 func (m *Message) ToKeyValue(order []string) (b []byte, err error) {
 	validator := func(str string, isKey bool) error {
 		if isKey && strings.Index(str, ":") > -1 {
@@ -273,6 +297,7 @@ func (m *Message) ToKeyValue(order []string) (b []byte, err error) {
 	return
 }
 
+// Copy returns copy of m.
 func (m *Message) Copy() Message {
 	m.Lock()
 	defer m.Unlock()
@@ -294,6 +319,7 @@ func (m *Message) Copy() Message {
 	return msg
 }
 
+// MessageFromQuery returns a new message as a result of parsing the given query.
 func MessageFromQuery(req url.Values) (msg Message, err error) {
 	var (
 		ns    NamespaceURI
