@@ -16,8 +16,6 @@ import (
 )
 
 const (
-	ASSOCIATION_LIFETIME = 60 * 60 * 12 // 12 hours
-
 	URI_PREFIX   = "http://yosida95-ubuntu1:6543"
 	STORE_PREFIX = "/home/yosida95/src/GOpenID/src/github.com/GehirnInc/GOpenID/example/assocs/"
 )
@@ -195,7 +193,7 @@ func main() {
 			&FileStore{
 				prefix: STORE_PREFIX,
 			},
-			ASSOCIATION_LIFETIME,
+			gopenid.AssociationLifetime,
 		),
 	}
 

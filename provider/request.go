@@ -13,8 +13,8 @@ var (
 	ErrInvalidCheckAuthenticationRequest = errors.New("invalid checkid_authentication request")
 	ErrInvalidAssociateRequest           = errors.New("invalid associate request")
 
-	DEFAULT_DH_GEN     = big.NewInt(2)
-	DEFAULT_DH_MODULUS = new(big.Int).SetBytes([]byte{
+	DefaultDhGen     = big.NewInt(2)
+	DefaultDhModulus = new(big.Int).SetBytes([]byte{
 		0xdc, 0xf9, 0x3a, 0x0b, 0x88, 0x39, 0x72, 0xec, 0x0e, 0x19,
 		0x98, 0x9a, 0xc5, 0xa2, 0xce, 0x31, 0x0e, 0x1d, 0x37, 0x71,
 		0x7e, 0x8d, 0x95, 0x71, 0xbb, 0x76, 0x23, 0x73, 0x18, 0x66,
@@ -231,7 +231,7 @@ func AssociateRequestFromMessage(msg gopenid.Message) (req *AssociateRequest, er
 		req.err = err
 	}
 
-	if req.sessionType.Name() != gopenid.SESSION_NO_ENCRYPTION.Name() {
+	if req.sessionType.Name() != gopenid.SessionNoEncryption.Name() {
 		var (
 			P *big.Int
 			G *big.Int
@@ -244,7 +244,7 @@ func AssociateRequestFromMessage(msg gopenid.Message) (req *AssociateRequest, er
 				return
 			}
 		} else {
-			P = DEFAULT_DH_MODULUS
+			P = DefaultDhModulus
 		}
 
 		GBase64, _ := msg.GetArg(gopenid.NewMessageKey(ns, "dh_gen"))
@@ -255,7 +255,7 @@ func AssociateRequestFromMessage(msg gopenid.Message) (req *AssociateRequest, er
 				return
 			}
 		} else {
-			G = DEFAULT_DH_GEN
+			G = DefaultDhGen
 		}
 		req.dhParams = dh.Params{
 			P: P,

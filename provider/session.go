@@ -233,7 +233,7 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 		gopenid.MessageValue(strconv.FormatInt(assoc.GetExpires(), 10)),
 	)
 
-	if s.request.sessionType.Name() == gopenid.SESSION_NO_ENCRYPTION.Name() {
+	if s.request.sessionType.Name() == gopenid.SessionNoEncryption.Name() {
 		macKey := gopenid.EncodeBase64(assoc.GetSecret())
 
 		res.AddArg(
@@ -292,11 +292,11 @@ func (s *AssociateSession) buildFailedResponse(err string) (res *OpenIDResponse)
 	)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "session_type"),
-		gopenid.MessageValue(gopenid.SESSION_DEFAULT.Name()),
+		gopenid.MessageValue(gopenid.DefaultSession.Name()),
 	)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "assoc_type"),
-		gopenid.MessageValue(gopenid.ASSOC_DEFAULT.Name()),
+		gopenid.MessageValue(gopenid.DefaultAssoc.Name()),
 	)
 
 	return

@@ -11,8 +11,11 @@ import (
 )
 
 const (
+	// Namespace for OpenID 1.0
 	NsOpenID10 NamespaceURI = "http://openid.net/signon/1.0"
+	// Namespace for OpenID 1.1
 	NsOpenID11 NamespaceURI = "http://openid.net/signon/1.1"
+	// Namespace for OpenID 2.0
 	NsOpenID20 NamespaceURI = "http://specs.openid.net/auth/2.0"
 
 	NsIdentifierSelect NamespaceURI = "http://specs.openid.net/auth/2.0/identifier_select"
@@ -25,7 +28,7 @@ var (
 	ErrKeyContainsNewLine = errors.New("key contains new line")
 	ErrValueNotFound      = errors.New("value not found")
 
-	ProtocolFields = []string{
+	protocolFields = []string{
 		"assoc_handle",
 		"assoc_type",
 		"claimed_id",
@@ -122,10 +125,10 @@ func (m *Message) GetNamespaceURI(alias string) (NamespaceURI, bool) {
 func (m *Message) GetNamespaceAlias(uri NamespaceURI) (string, bool) {
 	if uri == m.GetOpenIDNamespace() {
 		return "", true
-	} else {
-		nsalias, ok := m.nsuri2nsalias[uri]
-		return nsalias, ok
 	}
+
+	nsalias, ok := m.nsuri2nsalias[uri]
+	return nsalias, ok
 }
 
 func (m *Message) SetNamespaceAlias(alias string, uri NamespaceURI) {
@@ -329,7 +332,7 @@ func MessageFromQuery(req url.Values) (msg Message, err error) {
 				// A namespace alias MUST NOT contain a period
 				err = ErrMalformedMessage
 				return
-			} else if idx := sort.SearchStrings(ProtocolFields, key); ProtocolFields[idx] == key {
+			} else if idx := sort.SearchStrings(protocolFields, key); protocolFields[idx] == key {
 				// The namespace alias is not allowed
 				err = ErrMalformedMessage
 				return

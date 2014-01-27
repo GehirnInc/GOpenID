@@ -78,12 +78,12 @@ func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
 }
 
 func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (err error) {
-	var ssoc *gopenid.Association
+	var assoc *gopenid.Association
 
 	if assocHandle == "" {
 		assoc, err = gopenid.CreateAssociation(
 			rand.Reader,
-			gopenid.ASSOC_DEFAULT,
+			gopenid.DefaultAssoc,
 			s.getExpires(),
 			true,
 		)
@@ -99,7 +99,7 @@ func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (
 
 			assoc, err = gopenid.CreateAssociation(
 				rand.Reader,
-				gopenid.ASSOC_DEFAULT,
+				gopenid.DefaultAssoc,
 				s.getExpires(),
 				true,
 			)

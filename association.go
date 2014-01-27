@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	ASSOCIATION_LIFETIME = 60 * 60 * 24 * 1
+	AssociationLifetime = 60 * 60 * 24 * 1
 )
 
 var (
@@ -23,39 +23,39 @@ var (
 	ErrUnknownSessionType          = errors.New("unknown session type")
 	ErrUnknownAssocType            = errors.New("unknown association type")
 
-	ASSOC_HMAC_SHA1 = AssocType{
+	AssocHmacSha1 = AssocType{
 		name:       "HMAC-SHA1",
 		hashFunc:   sha1.New,
 		secretSize: sha1.Size,
 	}
-	ASSOC_HMAC_SHA256 = AssocType{
+	AssocHmacSha256 = AssocType{
 		name:       "HMAC-SHA256",
 		hashFunc:   sha256.New,
 		secretSize: sha256.Size,
 	}
 
-	SESSION_DH_SHA1 = SessionType{
+	SessionDhSha1 = SessionType{
 		name: "DH-SHA1",
 		assocTypes: []AssocType{
-			ASSOC_HMAC_SHA1,
+			AssocHmacSha1,
 		},
 	}
-	SESSION_DH_SHA256 = SessionType{
+	SessionDhSha256 = SessionType{
 		name: "DH-SHA256",
 		assocTypes: []AssocType{
-			ASSOC_HMAC_SHA256,
+			AssocHmacSha256,
 		},
 	}
-	SESSION_NO_ENCRYPTION = SessionType{
+	SessionNoEncryption = SessionType{
 		name: "no-encryption",
 		assocTypes: []AssocType{
-			ASSOC_HMAC_SHA1,
-			ASSOC_HMAC_SHA256,
+			AssocHmacSha1,
+			AssocHmacSha256,
 		},
 	}
 
-	SESSION_DEFAULT = SESSION_DH_SHA256
-	ASSOC_DEFAULT   = ASSOC_HMAC_SHA256
+	DefaultAssoc   = AssocHmacSha256
+	DefaultSession = SessionDhSha256
 )
 
 type AssocType struct {
@@ -79,9 +79,9 @@ func (t *AssocType) GetSecretSize() int {
 func GetAssocTypeByName(name string) (assocType AssocType, err error) {
 	switch name {
 	case "HMAC-SHA1":
-		assocType = ASSOC_HMAC_SHA1
+		assocType = AssocHmacSha1
 	case "HMAC-SHA256":
-		assocType = ASSOC_HMAC_SHA256
+		assocType = AssocHmacSha256
 	default:
 		err = ErrUnknownAssocType
 	}
@@ -101,11 +101,11 @@ func (t *SessionType) Name() string {
 func GetSessionTypeByName(name string) (sessionType SessionType, err error) {
 	switch name {
 	case "no-encryption":
-		sessionType = SESSION_NO_ENCRYPTION
+		sessionType = SessionNoEncryption
 	case "DH-SHA1":
-		sessionType = SESSION_DH_SHA1
+		sessionType = SessionDhSha1
 	case "DH-SHA256":
-		sessionType = SESSION_DH_SHA256
+		sessionType = SessionDhSha256
 	default:
 		err = ErrUnknownSessionType
 	}
@@ -123,7 +123,7 @@ type Association struct {
 
 func NewAssociation(assocType AssocType, handle string, secret []byte, expires int64, isStateless bool) *Association {
 	if expires < 1 {
-		expires = time.Now().Unix() + ASSOCIATION_LIFETIME
+		expires = time.Now().Unix() + AssociationLifetime
 	}
 
 	return &Association{

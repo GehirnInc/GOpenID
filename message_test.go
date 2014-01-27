@@ -121,7 +121,7 @@ var (
 )
 
 func TestMessageFromQuery(t *testing.T) {
-	assert.True(t, sort.StringsAreSorted(ProtocolFields))
+	assert.True(t, sort.StringsAreSorted(protocolFields))
 
 	for _, testCase := range messageFromQueryCases {
 		message, err := MessageFromQuery(testCase.query)
@@ -212,8 +212,9 @@ func TestMessage(t *testing.T) {
 
 	if kv, err := msg.ToKeyValue([]string{"openid.ns", "openid.return_to"}); assert.Nil(t, err) {
 		expected := bytes.Join([][]byte{
-			[]byte(fmt.Sprintf("openid.ns:%s", NsOpenID20.String())),
-			[]byte("openid.return_to:http://www.example.com/"),
+			[]byte(fmt.Sprintf("ns:%s", NsOpenID20.String())),
+			[]byte("return_to:http://www.example.com/"),
+			nil,
 		}, []byte{'\n'})
 		assert.Equal(t, kv, expected)
 	}

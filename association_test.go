@@ -11,35 +11,35 @@ import (
 
 func TestCreateAssociation(t *testing.T) {
 	issue := time.Now()
-	assoc, err := CreateAssociation(rand.Reader, ASSOC_HMAC_SHA1, 0, false)
+	assoc, err := CreateAssociation(rand.Reader, AssocHmacSha1, 0, false)
 	if assert.Nil(t, err) {
-		assert.Equal(t, assoc.GetAssocType(), ASSOC_HMAC_SHA1)
+		assert.Equal(t, assoc.GetAssocType(), AssocHmacSha1)
 
 		handle, err := uuid.ParseHex(assoc.GetHandle())
 		if assert.Nil(t, err) {
 			assert.Equal(t, assoc.GetHandle(), handle.String())
 		}
 
-		assert.Equal(t, len(assoc.GetSecret()), ASSOC_HMAC_SHA1.GetSecretSize())
+		assert.Equal(t, len(assoc.GetSecret()), AssocHmacSha1.GetSecretSize())
 
 		expires := time.Unix(assoc.GetExpires(), 0)
-		expected := time.Unix(issue.Unix()+ASSOCIATION_LIFETIME, 0)
+		expected := time.Unix(issue.Unix()+AssociationLifetime, 0)
 		assert.True(t, expected.Equal(expires) || expected.After(expires))
 
 		assert.False(t, assoc.IsStateless())
 	}
 
 	expires := time.Unix(time.Now().Unix()+60*60*24*2, 0).Unix()
-	assoc, err = CreateAssociation(rand.Reader, ASSOC_HMAC_SHA256, expires, true)
+	assoc, err = CreateAssociation(rand.Reader, AssocHmacSha256, expires, true)
 	if assert.Nil(t, err) {
-		assert.Equal(t, assoc.GetAssocType(), ASSOC_HMAC_SHA256)
+		assert.Equal(t, assoc.GetAssocType(), AssocHmacSha256)
 
 		handle, err := uuid.ParseHex(assoc.GetHandle())
 		if assert.Nil(t, err) {
 			assert.Equal(t, assoc.GetHandle(), handle.String())
 		}
 
-		assert.Equal(t, len(assoc.GetSecret()), ASSOC_HMAC_SHA256.GetSecretSize())
+		assert.Equal(t, len(assoc.GetSecret()), AssocHmacSha256.GetSecretSize())
 
 		assert.Equal(t, assoc.GetExpires(), expires)
 
