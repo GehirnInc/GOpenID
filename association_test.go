@@ -11,7 +11,7 @@ import (
 
 func TestCreateAssociation(t *testing.T) {
 	issue := time.Now()
-	assoc, err := CreateAssociation(rand.Reader, AssocHmacSha1, 0, false)
+	assoc, err := CreateAssociation(rand.Reader, AssocHmacSha1, time.Unix(0, 0), false)
 	if assert.Nil(t, err) {
 		assert.Equal(t, assoc.GetAssocType(), AssocHmacSha1)
 
@@ -22,14 +22,14 @@ func TestCreateAssociation(t *testing.T) {
 
 		assert.Equal(t, len(assoc.GetSecret()), AssocHmacSha1.GetSecretSize())
 
-		expires := time.Unix(assoc.GetExpires(), 0)
-		expected := time.Unix(issue.Unix()+AssociationLifetime, 0)
+		expires := assoc.GetExpires()
+		expected := issue.Add(AssociationLifetime)
 		assert.True(t, expected.Equal(expires) || expected.After(expires))
 
 		assert.False(t, assoc.IsStateless())
 	}
 
-	expires := time.Unix(time.Now().Unix()+60*60*24*2, 0).Unix()
+	expires := time.Now().Add(time.Hour * 24 * 2)
 	assoc, err = CreateAssociation(rand.Reader, AssocHmacSha256, expires, true)
 	if assert.Nil(t, err) {
 		assert.Equal(t, assoc.GetAssocType(), AssocHmacSha256)
