@@ -6,9 +6,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/nu7hatch/gouuid"
 	"hash"
-	"io"
 	"strings"
 	"time"
 )
@@ -122,10 +120,6 @@ type Association struct {
 }
 
 func NewAssociation(assocType AssocType, handle string, secret []byte, expires time.Time, isStateless bool) *Association {
-	if expires.IsZero() {
-		expires = time.Now().Add(AssociationLifetime)
-	}
-
 	return &Association{
 		assocType:   assocType,
 		handle:      handle,
@@ -133,24 +127,6 @@ func NewAssociation(assocType AssocType, handle string, secret []byte, expires t
 		expires:     expires,
 		isStateless: isStateless,
 	}
-}
-
-func CreateAssociation(random io.Reader, assocType AssocType, expires time.Time, isStateless bool) (assoc *Association, err error) {
-	handle, err := uuid.NewV4()
-	if err != nil {
-		err = ErrGeneratingAssociationFailed
-		return
-	}
-
-	secret := make([]byte, assocType.GetSecretSize())
-	_, err = io.ReadFull(random, secret)
-	if err != nil {
-		err = ErrGeneratingAssociationFailed
-		return
-	}
-
-	assoc = NewAssociation(assocType, handle.String(), secret, expires, isStateless)
-	return
 }
 
 func (assoc *Association) GetAssocType() AssocType {

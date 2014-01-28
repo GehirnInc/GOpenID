@@ -1,62 +1,35 @@
 package gopenid
 
 import (
+	"code.google.com/p/go-uuid/uuid"
 	"crypto/hmac"
 	"crypto/rand"
-	"github.com/nu7hatch/gouuid"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"testing"
 	"time"
 )
 
-func TestCreateAssociation(t *testing.T) {
-	issue := time.Now()
-	assoc, err := CreateAssociation(rand.Reader, AssocHmacSha1, time.Unix(0, 0), false)
-	if assert.Nil(t, err) {
-		assert.Equal(t, assoc.GetAssocType(), AssocHmacSha1)
-
-		handle, err := uuid.ParseHex(assoc.GetHandle())
-		if assert.Nil(t, err) {
-			assert.Equal(t, assoc.GetHandle(), handle.String())
-		}
-
-		assert.Equal(t, len(assoc.GetSecret()), AssocHmacSha1.GetSecretSize())
-
-		expires := assoc.GetExpires()
-		expected := issue.Add(AssociationLifetime)
-		assert.True(t, expected.Equal(expires) || expected.After(expires))
-
-		assert.False(t, assoc.IsStateless())
+func TestAssociation(t *testing.T) {
+	handle := uuid.New()
+	secret := make([]byte, DefaultAssoc.GetSecretSize())
+	_, err := io.ReadFull(rand.Reader, secret)
+	if !assert.Nil(t, err) {
+		t.FailNow()
 	}
-
 	expires := time.Now().Add(time.Hour * 24 * 2)
-	assoc, err = CreateAssociation(rand.Reader, AssocHmacSha256, expires, true)
-	if assert.Nil(t, err) {
-		assert.Equal(t, assoc.GetAssocType(), AssocHmacSha256)
 
-		handle, err := uuid.ParseHex(assoc.GetHandle())
-		if assert.Nil(t, err) {
-			assert.Equal(t, assoc.GetHandle(), handle.String())
-		}
+	assoc := NewAssociation(DefaultAssoc, handle, secret, expires, true)
 
-		assert.Equal(t, len(assoc.GetSecret()), AssocHmacSha256.GetSecretSize())
-
-		assert.Equal(t, assoc.GetExpires(), expires)
-
-		assert.True(t, assoc.IsStateless())
-	}
-
-	var (
-		NsExt NamespaceURI = "http://example.com/"
-	)
+	var NsExt NamespaceURI = "http://example.com/"
 
 	msg := Message{
 		namespace: NsOpenID20,
 		nsuri2nsalias: map[NamespaceURI]string{
-			"http://example.com/": "example",
+			NsExt: "example",
 		},
 		nsalias2nsuri: map[string]NamespaceURI{
-			"example": "http://example.com/",
+			"example": NsExt,
 		},
 		args: map[MessageKey]MessageValue{
 			NewMessageKey(NsExt, "foo"):            "bar",
@@ -65,6 +38,7 @@ func TestCreateAssociation(t *testing.T) {
 			NewMessageKey(NsOpenID20, "return_to"): "http://www.example.com/",
 		},
 	}
+
 	err = assoc.Sign(msg, []string{"mode", "ns"})
 	if assert.Nil(t, err) {
 		signed, ok := msg.GetArg(NewMessageKey(NsOpenID20, "signed"))

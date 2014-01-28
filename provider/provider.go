@@ -2,6 +2,7 @@ package provider
 
 import (
 	"github.com/GehirnInc/GOpenID"
+	"io"
 	"time"
 )
 
@@ -12,8 +13,8 @@ type Provider struct {
 	assocLifetime time.Duration
 }
 
-func NewProvider(endpoint string, store gopenid.Store, lifetime time.Duration) *Provider {
-	signer := NewSigner(store, lifetime)
+func NewProvider(endpoint string, store gopenid.Store, lifetime time.Duration, secretGenerator io.Reader) *Provider {
+	signer := NewSigner(store, lifetime, secretGenerator)
 
 	return &Provider{
 		store:         store,
@@ -25,10 +26,6 @@ func NewProvider(endpoint string, store gopenid.Store, lifetime time.Duration) *
 
 func (p *Provider) EstablishSession(msg gopenid.Message) (Session, error) {
 	return SessionFromMessage(p, msg)
-}
-
-func (p *Provider) getAssocExpires() time.Time {
-	return time.Now().Add(p.assocLifetime)
 }
 
 func (p *Provider) GetYadisProviderIdentifier() Response {

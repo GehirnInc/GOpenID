@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"crypto/rand"
 	"errors"
 	"github.com/GehirnInc/GOpenID"
 	"github.com/GehirnInc/GOpenID/dh"
@@ -203,12 +202,7 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 		return s.buildFailedResponse(s.request.err.Error()), nil
 	}
 
-	assoc, err := gopenid.CreateAssociation(
-		rand.Reader,
-		s.request.assocType,
-		s.provider.getAssocExpires(),
-		false,
-	)
+	assoc, err := s.provider.signer.createAssociation(s.request.assocType, false)
 	if err != nil {
 		return s.buildFailedResponse(err.Error()), nil
 	}

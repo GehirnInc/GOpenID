@@ -1,9 +1,10 @@
 package provider
 
 import (
-	"crypto/rand"
+	"code.google.com/p/go-uuid/uuid"
 	"errors"
 	"github.com/GehirnInc/GOpenID"
+	"io"
 	"strings"
 	"time"
 )
@@ -21,13 +22,30 @@ var (
 type Signer struct {
 	store    gopenid.Store
 	lifetime time.Duration
+
+	secretGenerator io.Reader
 }
 
-func NewSigner(store gopenid.Store, lifetime time.Duration) *Signer {
+func NewSigner(store gopenid.Store, lifetime time.Duration, secretGenerator io.Reader) *Signer {
 	return &Signer{
 		store:    store,
 		lifetime: lifetime,
+
+		secretGenerator: secretGenerator,
 	}
+}
+
+func (s *Signer) createAssociation(assocType gopenid.AssocType, isStateless bool) (assoc *gopenid.Association, err error) {
+	handle := uuid.New()
+	secret := make([]byte, assocType.GetSecretSize())
+	_, err = io.ReadFull(s.secretGenerator, secret)
+	if err != nil {
+		return
+	}
+	expires := time.Now().Add(s.lifetime)
+
+	assoc = gopenid.NewAssociation(assocType, handle, secret, expires, isStateless)
+	return
 }
 
 func (s *Signer) Invalidate(handle string, isStateless bool) {
@@ -81,12 +99,7 @@ func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (
 	var assoc *gopenid.Association
 
 	if assocHandle == "" {
-		assoc, err = gopenid.CreateAssociation(
-			rand.Reader,
-			gopenid.DefaultAssoc,
-			s.getExpires(),
-			true,
-		)
+		assoc, err = s.createAssociation(gopenid.DefaultAssoc, true)
 	} else {
 		var ok bool
 
@@ -97,12 +110,7 @@ func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (
 				gopenid.MessageValue(assocHandle),
 			)
 
-			assoc, err = gopenid.CreateAssociation(
-				rand.Reader,
-				gopenid.DefaultAssoc,
-				s.getExpires(),
-				true,
-			)
+			assoc, err = s.createAssociation(gopenid.DefaultAssoc, true)
 		}
 	}
 
