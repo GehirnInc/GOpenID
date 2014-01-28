@@ -9,10 +9,10 @@ type Provider struct {
 	store         gopenid.Store
 	signer        *Signer
 	endpoint      string
-	assocLifetime int64
+	assocLifetime time.Duration
 }
 
-func NewProvider(endpoint string, store gopenid.Store, lifetime int64) *Provider {
+func NewProvider(endpoint string, store gopenid.Store, lifetime time.Duration) *Provider {
 	signer := NewSigner(store, lifetime)
 
 	return &Provider{
@@ -27,8 +27,8 @@ func (p *Provider) EstablishSession(msg gopenid.Message) (Session, error) {
 	return SessionFromMessage(p, msg)
 }
 
-func (p *Provider) getAssocExpires() int64 {
-	return time.Now().Unix() + p.assocLifetime
+func (p *Provider) getAssocExpires() time.Time {
+	return time.Now().Add(p.assocLifetime)
 }
 
 func (p *Provider) GetYadisProviderIdentifier() Response {

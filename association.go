@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	AssociationLifetime = 60 * 60 * 24 * 1
+	AssociationLifetime = 24 * time.Hour
 )
 
 var (
@@ -117,13 +117,13 @@ type Association struct {
 	assocType   AssocType
 	handle      string
 	secret      []byte
-	expires     int64
+	expires     time.Time
 	isStateless bool
 }
 
-func NewAssociation(assocType AssocType, handle string, secret []byte, expires int64, isStateless bool) *Association {
-	if expires < 1 {
-		expires = time.Now().Unix() + AssociationLifetime
+func NewAssociation(assocType AssocType, handle string, secret []byte, expires time.Time, isStateless bool) *Association {
+	if expires.IsZero() {
+		expires = time.Now().Add(AssociationLifetime)
 	}
 
 	return &Association{
@@ -135,7 +135,7 @@ func NewAssociation(assocType AssocType, handle string, secret []byte, expires i
 	}
 }
 
-func CreateAssociation(random io.Reader, assocType AssocType, expires int64, isStateless bool) (assoc *Association, err error) {
+func CreateAssociation(random io.Reader, assocType AssocType, expires time.Time, isStateless bool) (assoc *Association, err error) {
 	handle, err := uuid.NewV4()
 	if err != nil {
 		err = ErrGeneratingAssociationFailed
@@ -165,12 +165,12 @@ func (assoc *Association) GetSecret() []byte {
 	return assoc.secret
 }
 
-func (assoc *Association) GetExpires() int64 {
+func (assoc *Association) GetExpires() time.Time {
 	return assoc.expires
 }
 
 func (assoc *Association) IsValid() bool {
-	return time.Now().Before(time.Unix(assoc.GetExpires(), 0))
+	return time.Now().Before(assoc.GetExpires())
 }
 
 func (assoc *Association) IsStateless() bool {
