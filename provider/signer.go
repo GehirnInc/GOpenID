@@ -20,10 +20,10 @@ var (
 
 type Signer struct {
 	store    gopenid.Store
-	lifetime int64
+	lifetime time.Duration
 }
 
-func NewSigner(store gopenid.Store, lifetime int64) *Signer {
+func NewSigner(store gopenid.Store, lifetime time.Duration) *Signer {
 	return &Signer{
 		store:    store,
 		lifetime: lifetime,
@@ -119,6 +119,6 @@ func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (
 	return assoc.Sign(res.message, order)
 }
 
-func (s *Signer) getExpires() int64 {
-	return time.Now().Unix() + s.lifetime
+func (s *Signer) getExpires() time.Time {
+	return time.Now().Add(s.lifetime)
 }

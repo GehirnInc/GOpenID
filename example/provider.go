@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -49,7 +50,7 @@ func (s *FileStore) StoreAssociation(assoc *gopenid.Association) {
 	f.Write(bytes.Join([][]byte{
 		[]byte(assocType.Name()),
 		assoc.GetSecret(),
-		[]byte(strconv.FormatInt(assoc.GetExpires(), 10)),
+		[]byte(strconv.FormatInt(assoc.GetExpires().Unix(), 10)),
 	}, []byte{'\n'}))
 }
 
@@ -83,7 +84,7 @@ func (s *FileStore) GetAssociation(assocHandle string, isStateless bool) (assoc 
 		panic(err)
 	}
 
-	assoc = gopenid.NewAssociation(assocType, assocHandle, parts[1], expires, isStateless)
+	assoc = gopenid.NewAssociation(assocType, assocHandle, parts[1], time.Unix(expires, 0), isStateless)
 	ok = true
 	return
 }

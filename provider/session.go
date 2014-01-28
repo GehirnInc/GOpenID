@@ -230,7 +230,7 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 	)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "expires_in"),
-		gopenid.MessageValue(strconv.FormatInt(assoc.GetExpires(), 10)),
+		gopenid.MessageValue(strconv.FormatInt(assoc.GetExpires().Unix(), 10)),
 	)
 
 	if s.request.sessionType.Name() == gopenid.SessionNoEncryption.Name() {
