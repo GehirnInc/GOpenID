@@ -21,8 +21,8 @@ type Session interface {
 	GetResponse() (Response, error)
 }
 
-func SessionFromMessage(p *Provider, msg gopenid.Message) (s Session, err error) {
-	req, err := RequestFromMessage(msg)
+func SessionFromMessage(p *Provider, method string, msg gopenid.Message) (s Session, err error) {
+	req, err := RequestFromMessage(method, msg)
 	if err != nil {
 		return
 	}

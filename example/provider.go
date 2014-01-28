@@ -153,7 +153,7 @@ func (p *OpenIDProvider) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := p.p.EstablishSession(msg)
+	session, err := p.p.EstablishSession(r.Method, msg)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return

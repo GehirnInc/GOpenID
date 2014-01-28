@@ -9,6 +9,7 @@ import (
 
 var (
 	ErrUnknownMode                       = errors.New("Unknown mode")
+	ErrMethodNotAllowed                  = errors.New("method not allowed")
 	ErrInvalidCheckIDRequest             = errors.New("invalid checkid_* request")
 	ErrInvalidCheckAuthenticationRequest = errors.New("invalid checkid_authentication request")
 	ErrInvalidAssociateRequest           = errors.New("invalid associate request")
@@ -37,21 +38,20 @@ type Request interface {
 	GetMessage() gopenid.Message
 }
 
-func RequestFromMessage(msg gopenid.Message) (Request, error) {
+func RequestFromMessage(method string, msg gopenid.Message) (Request, error) {
 	mode, _ := msg.GetArg(gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "mode"))
 	switch mode {
 	case "checkid_immediate":
-		return checkIDRequestFromMessage(msg)
+		return checkIDRequestFromMessage(method, msg)
 	case "checkid_setup":
-		return checkIDRequestFromMessage(msg)
+		return checkIDRequestFromMessage(method, msg)
 	case "associate":
-		return associateRequestFromMessage(msg)
+		return associateRequestFromMessage(method, msg)
 	case "check_authentication":
-		return checkAuthenticationRequestFromMessage(msg)
+		return checkAuthenticationRequestFromMessage(method, msg)
 	default:
 		return nil, ErrUnknownMode
 	}
-
 }
 
 type checkIDRequest struct {
@@ -65,7 +65,7 @@ type checkIDRequest struct {
 	realm       gopenid.MessageValue
 }
 
-func checkIDRequestFromMessage(msg gopenid.Message) (req *checkIDRequest, err error) {
+func checkIDRequestFromMessage(method string, msg gopenid.Message) (req *checkIDRequest, err error) {
 	ns := msg.GetOpenIDNamespace()
 	mode, _ := msg.GetArg(gopenid.NewMessageKey(ns, "mode"))
 
@@ -141,7 +141,12 @@ type checkAuthenticationRequest struct {
 	responseNonce gopenid.MessageValue
 }
 
-func checkAuthenticationRequestFromMessage(msg gopenid.Message) (req *checkAuthenticationRequest, err error) {
+func checkAuthenticationRequestFromMessage(method string, msg gopenid.Message) (req *checkAuthenticationRequest, err error) {
+	if method != "POST" {
+		err = ErrMethodNotAllowed
+		return
+	}
+
 	ns := msg.GetOpenIDNamespace()
 
 	if ns != gopenid.NsOpenID20 {
@@ -211,7 +216,12 @@ type associateRequest struct {
 	dhConsumerPublic dh.PublicKey
 }
 
-func associateRequestFromMessage(msg gopenid.Message) (req *associateRequest, err error) {
+func associateRequestFromMessage(method string, msg gopenid.Message) (req *associateRequest, err error) {
+	if method != "POST" {
+		err = ErrMethodNotAllowed
+		return
+	}
+
 	ns := msg.GetOpenIDNamespace()
 	req = &associateRequest{
 		message: msg,

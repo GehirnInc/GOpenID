@@ -24,8 +24,8 @@ func NewProvider(endpoint string, store gopenid.Store, lifetime time.Duration, s
 	}
 }
 
-func (p *Provider) EstablishSession(msg gopenid.Message) (Session, error) {
-	return SessionFromMessage(p, msg)
+func (p *Provider) EstablishSession(method string, msg gopenid.Message) (Session, error) {
+	return SessionFromMessage(p, method, msg)
 }
 
 func (p *Provider) GetYadisProviderIdentifier() Response {
