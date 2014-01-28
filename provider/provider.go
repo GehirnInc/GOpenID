@@ -43,7 +43,7 @@ func (p *Provider) GetYadisProviderIdentifier() Response {
 		},
 	}
 
-	return NewYadisResponse(et)
+	return newYadisResponse(et)
 }
 
 func (p *Provider) GetYadisClaimedIdentifier(localid string) Response {
@@ -62,5 +62,5 @@ func (p *Provider) GetYadisClaimedIdentifier(localid string) Response {
 		},
 	}
 
-	return NewYadisResponse(et)
+	return newYadisResponse(et)
 }

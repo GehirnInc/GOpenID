@@ -13,7 +13,7 @@ type Response interface {
 	GetContentType() string
 }
 
-type OpenIDResponse struct {
+type openIDResponse struct {
 	request       Request
 	message       gopenid.Message
 	needsRedirect bool
@@ -22,23 +22,23 @@ type OpenIDResponse struct {
 	returnTo      string
 }
 
-func NewOpenIDResponse(req Request) *OpenIDResponse {
-	res := &OpenIDResponse{
+func newOpenIDResponse(req Request) *openIDResponse {
+	res := &openIDResponse{
 		request: req,
 		message: gopenid.NewMessage(req.GetNamespace()),
 	}
 
 	switch ret := req.(type) {
-	case *CheckIDRequest:
+	case *checkIDRequest:
 		res.needsRedirect = true
 		res.isPermanently = false
 
 		returnTo, _ := ret.message.GetArg(gopenid.NewMessageKey(ret.GetNamespace(), "return_to"))
 		res.returnTo = returnTo.String()
-	case *AssociateRequest:
+	case *associateRequest:
 		res.needsRedirect = false
 		res.contentType = "text/plain;charset=utf8"
-	case *CheckAuthenticationRequest:
+	case *checkAuthenticationRequest:
 		res.needsRedirect = false
 		res.contentType = "text/plain;charset=utf8"
 	}
@@ -46,31 +46,31 @@ func NewOpenIDResponse(req Request) *OpenIDResponse {
 	return res
 }
 
-func (res *OpenIDResponse) GetNamespace() gopenid.NamespaceURI {
+func (res *openIDResponse) GetNamespace() gopenid.NamespaceURI {
 	return res.message.GetOpenIDNamespace()
 }
 
-func (res *OpenIDResponse) AddArg(key gopenid.MessageKey, value gopenid.MessageValue) {
+func (res *openIDResponse) AddArg(key gopenid.MessageKey, value gopenid.MessageValue) {
 	res.message.AddArg(key, value)
 }
 
-func (res *OpenIDResponse) GetArg(key gopenid.MessageKey) (gopenid.MessageValue, bool) {
+func (res *openIDResponse) GetArg(key gopenid.MessageKey) (gopenid.MessageValue, bool) {
 	return res.message.GetArg(key)
 }
 
-func (res *OpenIDResponse) GetMessage() gopenid.Message {
+func (res *openIDResponse) GetMessage() gopenid.Message {
 	return res.message
 }
 
-func (res *OpenIDResponse) NeedsRedirect() bool {
+func (res *openIDResponse) NeedsRedirect() bool {
 	return res.needsRedirect
 }
 
-func (res *OpenIDResponse) IsPermanently() bool {
+func (res *openIDResponse) IsPermanently() bool {
 	return res.isPermanently
 }
 
-func (res *OpenIDResponse) GetRedirectTo() string {
+func (res *openIDResponse) GetRedirectTo() string {
 	redirectTo, _ := url.Parse(res.returnTo)
 	query := redirectTo.Query()
 
@@ -82,42 +82,42 @@ func (res *OpenIDResponse) GetRedirectTo() string {
 	return redirectTo.String()
 }
 
-func (res *OpenIDResponse) GetBody() []byte {
+func (res *openIDResponse) GetBody() []byte {
 	kv, _ := res.message.ToKeyValue(res.message.Keys())
 	return kv
 }
 
-func (res *OpenIDResponse) GetContentType() string {
+func (res *openIDResponse) GetContentType() string {
 	return res.contentType
 }
 
-type YadisResponse struct {
+type yadisResponse struct {
 	et *gopenid.XRDSDocument
 }
 
-func NewYadisResponse(et *gopenid.XRDSDocument) *YadisResponse {
-	return &YadisResponse{
+func newYadisResponse(et *gopenid.XRDSDocument) *yadisResponse {
+	return &yadisResponse{
 		et: et,
 	}
 }
 
-func (res *YadisResponse) NeedsRedirect() bool {
+func (res *yadisResponse) NeedsRedirect() bool {
 	return false
 }
 
-func (res *YadisResponse) IsPermanently() bool {
+func (res *yadisResponse) IsPermanently() bool {
 	return false
 }
 
-func (res *YadisResponse) GetRedirectTo() string {
+func (res *yadisResponse) GetRedirectTo() string {
 	return ""
 }
 
-func (res *YadisResponse) GetBody() (b []byte) {
+func (res *yadisResponse) GetBody() (b []byte) {
 	b, _ = gopenid.EncodeXRDS(res.et)
 	return
 }
 
-func (res *YadisResponse) GetContentType() string {
+func (res *yadisResponse) GetContentType() string {
 	return "application/xrds+xml"
 }

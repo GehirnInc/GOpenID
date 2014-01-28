@@ -28,11 +28,11 @@ func SessionFromMessage(p *Provider, msg gopenid.Message) (s Session, err error)
 	}
 
 	switch req.(type) {
-	case *CheckIDRequest:
+	case *checkIDRequest:
 		s = new(CheckIDSession)
-	case *AssociateRequest:
+	case *associateRequest:
 		s = new(AssociateSession)
-	case *CheckAuthenticationRequest:
+	case *checkAuthenticationRequest:
 		s = new(CheckAuthenticationSession)
 	}
 
@@ -43,7 +43,7 @@ func SessionFromMessage(p *Provider, msg gopenid.Message) (s Session, err error)
 
 type CheckIDSession struct {
 	provider *Provider
-	request  *CheckIDRequest
+	request  *checkIDRequest
 
 	accepted  bool
 	identity  string
@@ -55,7 +55,7 @@ func (s *CheckIDSession) SetProvider(p *Provider) {
 }
 
 func (s *CheckIDSession) SetRequest(r Request) {
-	s.request = r.(*CheckIDRequest)
+	s.request = r.(*checkIDRequest)
 }
 
 func (s *CheckIDSession) GetRequest() Request {
@@ -72,7 +72,7 @@ func (s *CheckIDSession) GetResponse() (Response, error) {
 	return s.buildResponse()
 }
 
-func (s *CheckIDSession) buildResponse() (res *OpenIDResponse, err error) {
+func (s *CheckIDSession) buildResponse() (res *openIDResponse, err error) {
 	if s.accepted {
 		res, err = s.getAcceptedResponse()
 		if err != nil {
@@ -105,7 +105,7 @@ func (s *CheckIDSession) buildResponse() (res *OpenIDResponse, err error) {
 	return
 }
 
-func (s *CheckIDSession) getAcceptedResponse() (res *OpenIDResponse, err error) {
+func (s *CheckIDSession) getAcceptedResponse() (res *openIDResponse, err error) {
 	var (
 		identity  gopenid.MessageValue
 		claimedId gopenid.MessageValue
@@ -136,7 +136,7 @@ func (s *CheckIDSession) getAcceptedResponse() (res *OpenIDResponse, err error) 
 		return
 	}
 
-	res = NewOpenIDResponse(s.request)
+	res = newOpenIDResponse(s.request)
 	res.AddArg(gopenid.NewMessageKey(s.request.GetNamespace(), "mode"), "id_res")
 	res.AddArg(
 		gopenid.NewMessageKey(s.request.GetNamespace(), "op_endpoint"),
@@ -152,8 +152,8 @@ func (s *CheckIDSession) getAcceptedResponse() (res *OpenIDResponse, err error) 
 	return
 }
 
-func (s *CheckIDSession) getRejectedResponse() (res *OpenIDResponse) {
-	res = NewOpenIDResponse(s.request)
+func (s *CheckIDSession) getRejectedResponse() (res *openIDResponse) {
+	res = newOpenIDResponse(s.request)
 
 	var mode gopenid.MessageValue = "cancel"
 	if s.request.mode == "checkid_immediate" {
@@ -178,7 +178,7 @@ func (s *CheckIDSession) getRejectedResponse() (res *OpenIDResponse) {
 
 type AssociateSession struct {
 	provider *Provider
-	request  *AssociateRequest
+	request  *associateRequest
 }
 
 func (s *AssociateSession) SetProvider(p *Provider) {
@@ -186,7 +186,7 @@ func (s *AssociateSession) SetProvider(p *Provider) {
 }
 
 func (s *AssociateSession) SetRequest(r Request) {
-	s.request = r.(*AssociateRequest)
+	s.request = r.(*associateRequest)
 }
 
 func (s *AssociateSession) GetRequest() Request {
@@ -197,7 +197,7 @@ func (s *AssociateSession) GetResponse() (Response, error) {
 	return s.buildResponse()
 }
 
-func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
+func (s *AssociateSession) buildResponse() (res *openIDResponse, err error) {
 	if s.request.err != nil {
 		return s.buildFailedResponse(s.request.err.Error()), nil
 	}
@@ -209,7 +209,7 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 
 	s.provider.store.StoreAssociation(assoc)
 
-	res = NewOpenIDResponse(s.request)
+	res = newOpenIDResponse(s.request)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "assoc_handle"),
 		gopenid.MessageValue(assoc.GetHandle()),
@@ -274,8 +274,8 @@ func (s *AssociateSession) buildResponse() (res *OpenIDResponse, err error) {
 	return
 }
 
-func (s *AssociateSession) buildFailedResponse(err string) (res *OpenIDResponse) {
-	res = NewOpenIDResponse(s.request)
+func (s *AssociateSession) buildFailedResponse(err string) (res *openIDResponse) {
+	res = newOpenIDResponse(s.request)
 	res.AddArg(
 		gopenid.NewMessageKey(res.GetNamespace(), "error"),
 		gopenid.MessageValue(err),
@@ -298,7 +298,7 @@ func (s *AssociateSession) buildFailedResponse(err string) (res *OpenIDResponse)
 
 type CheckAuthenticationSession struct {
 	provider *Provider
-	request  *CheckAuthenticationRequest
+	request  *checkAuthenticationRequest
 }
 
 func (s *CheckAuthenticationSession) SetProvider(p *Provider) {
@@ -306,7 +306,7 @@ func (s *CheckAuthenticationSession) SetProvider(p *Provider) {
 }
 
 func (s *CheckAuthenticationSession) SetRequest(r Request) {
-	s.request = r.(*CheckAuthenticationRequest)
+	s.request = r.(*checkAuthenticationRequest)
 }
 
 func (s *CheckAuthenticationSession) GetRequest() Request {
@@ -317,7 +317,7 @@ func (s *CheckAuthenticationSession) GetResponse() (Response, error) {
 	return s.buildResponse()
 }
 
-func (s *CheckAuthenticationSession) buildResponse() (res *OpenIDResponse, err error) {
+func (s *CheckAuthenticationSession) buildResponse() (res *openIDResponse, err error) {
 	if s.provider.store.IsKnownNonce(s.request.responseNonce.String()) {
 		err = ErrKnownNonce
 		return
@@ -328,7 +328,7 @@ func (s *CheckAuthenticationSession) buildResponse() (res *OpenIDResponse, err e
 		return
 	}
 
-	res = NewOpenIDResponse(s.request)
+	res = newOpenIDResponse(s.request)
 
 	if isValid {
 		res.AddArg(gopenid.NewMessageKey(res.GetNamespace(), "is_valid"), "true")

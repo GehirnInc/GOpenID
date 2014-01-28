@@ -162,7 +162,7 @@ func TestCheckIDRequest(t *testing.T) {
 			t.Log("invalid request data in index %d", index)
 		}
 
-		req, err := CheckIDRequestFromMessage(msg)
+		req, err := checkIDRequestFromMessage(msg)
 		if !assert.Nil(t, err) {
 			t.Logf("invalid request data in index %d, %v\n", index, err)
 			continue

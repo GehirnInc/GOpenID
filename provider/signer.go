@@ -65,7 +65,7 @@ func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
 	)
 
 	switch ret := req.(type) {
-	case *CheckAuthenticationRequest:
+	case *checkAuthenticationRequest:
 		assocHandle = ret.assocHandle
 		signed = ret.signed
 		sig = ret.sig
@@ -95,7 +95,7 @@ func (s *Signer) Verify(req Request, isStateless bool) (ok bool, err error) {
 	return
 }
 
-func (s *Signer) Sign(res *OpenIDResponse, assocHandle string, order []string) (err error) {
+func (s *Signer) Sign(res *openIDResponse, assocHandle string, order []string) (err error) {
 	var assoc *gopenid.Association
 
 	if assocHandle == "" {

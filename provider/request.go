@@ -41,20 +41,20 @@ func RequestFromMessage(msg gopenid.Message) (Request, error) {
 	mode, _ := msg.GetArg(gopenid.NewMessageKey(msg.GetOpenIDNamespace(), "mode"))
 	switch mode {
 	case "checkid_immediate":
-		return CheckIDRequestFromMessage(msg)
+		return checkIDRequestFromMessage(msg)
 	case "checkid_setup":
-		return CheckIDRequestFromMessage(msg)
+		return checkIDRequestFromMessage(msg)
 	case "associate":
-		return AssociateRequestFromMessage(msg)
+		return associateRequestFromMessage(msg)
 	case "check_authentication":
-		return CheckAuthenticationRequestFromMessage(msg)
+		return checkAuthenticationRequestFromMessage(msg)
 	default:
 		return nil, ErrUnknownMode
 	}
 
 }
 
-type CheckIDRequest struct {
+type checkIDRequest struct {
 	message gopenid.Message
 
 	mode        gopenid.MessageValue
@@ -65,7 +65,7 @@ type CheckIDRequest struct {
 	realm       gopenid.MessageValue
 }
 
-func CheckIDRequestFromMessage(msg gopenid.Message) (req *CheckIDRequest, err error) {
+func checkIDRequestFromMessage(msg gopenid.Message) (req *checkIDRequest, err error) {
 	ns := msg.GetOpenIDNamespace()
 	mode, _ := msg.GetArg(gopenid.NewMessageKey(ns, "mode"))
 
@@ -107,7 +107,7 @@ func CheckIDRequestFromMessage(msg gopenid.Message) (req *CheckIDRequest, err er
 		realm = returnTo
 	}
 
-	req = &CheckIDRequest{
+	req = &checkIDRequest{
 		message:     msg,
 		mode:        mode,
 		claimedId:   claimedId,
@@ -119,19 +119,19 @@ func CheckIDRequestFromMessage(msg gopenid.Message) (req *CheckIDRequest, err er
 	return
 }
 
-func (req *CheckIDRequest) GetNamespace() gopenid.NamespaceURI {
+func (req *checkIDRequest) GetNamespace() gopenid.NamespaceURI {
 	return req.message.GetOpenIDNamespace()
 }
 
-func (req *CheckIDRequest) GetMode() string {
+func (req *checkIDRequest) GetMode() string {
 	return req.mode.String()
 }
 
-func (req *CheckIDRequest) GetMessage() gopenid.Message {
+func (req *checkIDRequest) GetMessage() gopenid.Message {
 	return req.message
 }
 
-type CheckAuthenticationRequest struct {
+type checkAuthenticationRequest struct {
 	message gopenid.Message
 
 	mode          gopenid.MessageValue
@@ -141,7 +141,7 @@ type CheckAuthenticationRequest struct {
 	responseNonce gopenid.MessageValue
 }
 
-func CheckAuthenticationRequestFromMessage(msg gopenid.Message) (req *CheckAuthenticationRequest, err error) {
+func checkAuthenticationRequestFromMessage(msg gopenid.Message) (req *checkAuthenticationRequest, err error) {
 	ns := msg.GetOpenIDNamespace()
 
 	if ns != gopenid.NsOpenID20 {
@@ -175,7 +175,7 @@ func CheckAuthenticationRequestFromMessage(msg gopenid.Message) (req *CheckAuthe
 		return
 	}
 
-	req = &CheckAuthenticationRequest{
+	req = &checkAuthenticationRequest{
 		message: msg,
 
 		mode:          mode,
@@ -187,19 +187,19 @@ func CheckAuthenticationRequestFromMessage(msg gopenid.Message) (req *CheckAuthe
 	return
 }
 
-func (req *CheckAuthenticationRequest) GetMode() string {
+func (req *checkAuthenticationRequest) GetMode() string {
 	return req.mode.String()
 }
 
-func (req *CheckAuthenticationRequest) GetNamespace() gopenid.NamespaceURI {
+func (req *checkAuthenticationRequest) GetNamespace() gopenid.NamespaceURI {
 	return req.message.GetOpenIDNamespace()
 }
 
-func (req *CheckAuthenticationRequest) GetMessage() gopenid.Message {
+func (req *checkAuthenticationRequest) GetMessage() gopenid.Message {
 	return req.message
 }
 
-type AssociateRequest struct {
+type associateRequest struct {
 	message gopenid.Message
 	err     error
 
@@ -211,9 +211,9 @@ type AssociateRequest struct {
 	dhConsumerPublic dh.PublicKey
 }
 
-func AssociateRequestFromMessage(msg gopenid.Message) (req *AssociateRequest, err error) {
+func associateRequestFromMessage(msg gopenid.Message) (req *associateRequest, err error) {
 	ns := msg.GetOpenIDNamespace()
-	req = &AssociateRequest{
+	req = &associateRequest{
 		message: msg,
 	}
 
@@ -279,14 +279,14 @@ func AssociateRequestFromMessage(msg gopenid.Message) (req *AssociateRequest, er
 	return
 }
 
-func (req *AssociateRequest) GetMode() string {
+func (req *associateRequest) GetMode() string {
 	return req.mode.String()
 }
 
-func (req *AssociateRequest) GetNamespace() gopenid.NamespaceURI {
+func (req *associateRequest) GetNamespace() gopenid.NamespaceURI {
 	return req.message.GetOpenIDNamespace()
 }
 
-func (req *AssociateRequest) GetMessage() gopenid.Message {
+func (req *associateRequest) GetMessage() gopenid.Message {
 	return req.message
 }
