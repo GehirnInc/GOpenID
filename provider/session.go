@@ -145,9 +145,12 @@ func (s *CheckIDSession) getAcceptedResponse() (res *openIDResponse, err error) 
 	res.AddArg(gopenid.NewMessageKey(s.request.GetNamespace(), "claimed_id"), claimedId)
 	res.AddArg(gopenid.NewMessageKey(s.request.GetNamespace(), "identity"), identity)
 	res.AddArg(gopenid.NewMessageKey(s.request.GetNamespace(), "return_to"), s.request.returnTo)
+
+	nonce := gopenid.GenerateNonce(time.Now().UTC())
+	s.provider.store.StoreNonce(nonce.String())
 	res.AddArg(
 		gopenid.NewMessageKey(s.request.GetNamespace(), "response_nonce"),
-		gopenid.GenerateNonce(time.Now().UTC()),
+		nonce,
 	)
 	return
 }
