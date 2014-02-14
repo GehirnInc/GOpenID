@@ -11,3 +11,6 @@
 
 # About
 GOpenID is a Go implementation of library for serve as OpenID 2.0 Provider developed at [Gehirn Inc](http://www.gehirn.co.jp/).
+
+# LICENSE
+See ./LICENSE.md
