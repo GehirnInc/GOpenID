@@ -1,17 +1,18 @@
 package gopenid
 
 import (
-	"code.google.com/p/go-uuid/uuid"
 	"crypto/hmac"
 	"crypto/rand"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAssociation(t *testing.T) {
-	handle := uuid.New()
+	handle := uuid.New().String()
 	secret := make([]byte, DefaultAssoc.GetSecretSize())
 	_, err := io.ReadFull(rand.Reader, secret)
 	if !assert.Nil(t, err) {
