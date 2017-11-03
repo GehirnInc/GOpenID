@@ -44,7 +44,7 @@ func TestAssociation(t *testing.T) {
 	if assert.Nil(t, err) {
 		signed, ok := msg.GetArg(NewMessageKey(NsOpenID20, "signed"))
 		if assert.True(t, ok) {
-			assert.Equal(t, signed, "mode,ns")
+			assert.Equal(t, signed.String(), "mode,ns")
 
 			sig, ok := msg.GetArg(NewMessageKey(NsOpenID20, "sig"))
 			if assert.True(t, ok) {
