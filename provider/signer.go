@@ -1,12 +1,13 @@
 package provider
 
 import (
-	"code.google.com/p/go-uuid/uuid"
 	"errors"
-	"github.com/GehirnInc/GOpenID"
 	"io"
 	"strings"
 	"time"
+
+	"github.com/GehirnInc/GOpenID"
+	"github.com/google/uuid"
 )
 
 var (
@@ -36,7 +37,7 @@ func NewSigner(store gopenid.Store, lifetime time.Duration, secretGenerator io.R
 }
 
 func (s *Signer) createAssociation(assocType gopenid.AssocType, isStateless bool) (assoc *gopenid.Association, err error) {
-	handle := uuid.New()
+	handle := uuid.New().String()
 	secret := make([]byte, assocType.GetSecretSize())
 	_, err = io.ReadFull(s.secretGenerator, secret)
 	if err != nil {

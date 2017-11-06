@@ -3,10 +3,11 @@ package gopenid
 import (
 	"bytes"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"net/url"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type messageFromQueryCase struct {
@@ -160,7 +161,7 @@ func TestMessage(t *testing.T) {
 	assert.Equal(t, msg.GetOpenIDNamespace(), NsOpenID20)
 
 	if nsuri, ok := msg.GetNamespaceURI("example"); assert.True(t, ok) {
-		assert.Equal(t, nsuri, "http://example.com/")
+		assert.Equal(t, nsuri.String(), "http://example.com/")
 	}
 
 	if nsalias, ok := msg.GetNamespaceAlias("http://example.com/"); assert.True(t, ok) {
@@ -168,16 +169,16 @@ func TestMessage(t *testing.T) {
 	}
 
 	if arg, ok := msg.GetArg(NewMessageKey(NsExt, "foo")); assert.True(t, ok) {
-		assert.Equal(t, arg, "bar")
+		assert.Equal(t, arg.String(), "bar")
 	}
 	if arg, ok := msg.GetArg(NewMessageKey(NsExt, "hoge")); assert.True(t, ok) {
-		assert.Equal(t, arg, "fuga")
+		assert.Equal(t, arg.String(), "fuga")
 	}
 	if arg, ok := msg.GetArg(NewMessageKey(NsOpenID20, "mode")); assert.True(t, ok) {
-		assert.Equal(t, arg, "checkid_immediate")
+		assert.Equal(t, arg.String(), "checkid_immediate")
 	}
 	if arg, ok := msg.GetArg(NewMessageKey(NsOpenID20, "return_to")); assert.True(t, ok) {
-		assert.Equal(t, arg, "http://www.example.com/")
+		assert.Equal(t, arg.String(), "http://www.example.com/")
 	}
 	_, ok := msg.GetArg(NewMessageKey(NsOpenID20, "notgiven"))
 	assert.False(t, ok)
